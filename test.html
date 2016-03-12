@@ -155,7 +155,7 @@ def pexec(data=None):
     if data is None:
         data = Cg.edi.getText()
     #print("preprocessing:", len( data ) )
-
+    doc.getElementById('screen').contentWindow.focus()
     Cg.fwrite( Cg.code_paste ,data)
 
     #preprocessor(data))
