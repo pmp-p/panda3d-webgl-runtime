@@ -1,0 +1,86 @@
+
+body {
+	background: #181818;
+	font-family: Roboto, sans-serif;
+	color: #eee;
+	margin: 0px;
+	padding: 0px;
+}
+
+html {
+	height:100%;
+	margin: 0px;
+	padding: 0px;}
+
+div#main {
+	display: block;}
+
+img#logo {
+	margin-top: 15%;}
+
+span#ldtext {
+	display: block;
+	font-size: 13pt;
+	margin-top: 80px;
+}
+
+span#credits {
+	position:fixed;
+	left: 0;
+	bottom: 0;
+	padding: 10px;
+	background-color: #111;
+	width:100%;
+	text-align: left;
+	font-size: 11pt;
+}
+
+span#status {
+    margin-top: 0px;
+	height: 11px;
+	font-size: 11pt;
+}
+
+div#ldbar-label {
+	font-size: 10pt;
+	text-align: left;
+	height: 45px;
+	width: 300px;
+}
+
+span#ld_asm {
+	font-size: 10pt;
+	text-align: left;
+	height: 45px;
+	width: 300px;
+}
+
+
+span#ld_mem {
+	font-size: 10pt;
+	text-align: left;
+	height: 45px;
+	width: 300px;
+}
+
+
+div#ldbar-outer {
+	background-color: #333;
+	height: 11px;
+	width: 300px;
+	text-align: left;
+}
+
+
+div#ldbar_asm {
+	background-color: #39f;
+	width:0%;
+	height:100%;
+}
+
+
+div#ldbar_mem {
+	background-color: #39f;
+	width:0%;
+	height:100%;
+}

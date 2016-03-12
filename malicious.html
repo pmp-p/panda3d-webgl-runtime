@@ -1,0 +1,136 @@
+<!doctype html>
+
+<html lang="en-us">
+  <head>
+
+<script type="text/javascript">
+/* ============================================================= */
+
+    WEBFROST_EMSCRIPT=  'pandawgl' ;
+    WEBFROST_MEM = true;
+
+
+// The uncompressed size of that resource (in bytes).
+    var ASM_SIZE = 33 * 1024 * 1024;
+    var MEM_SIZE = 10 * 1024 *1024;
+    var CONSOLE = false;
+
+
+    </script>
+    <script type="text/javascript" src="js/lzma.js"></script>
+
+    <script type="text/javascript" src="js/browserfs.p3dwgl.js">
+/*
+Licenses:
+    pandawgl:
+    panda webgl-port : Modified BSD License
+    https://github.com/panda3d/panda3d/blob/master/LICENSE
+
+    lzma.js
+    lzma_worker.js : MIT https://github.com/nmrugg/LZMA-JS
+
+    BrowserFS:
+    MIT License https://github.com/jvilk/BrowserFS
+
+============================================================= */
+</script>
+
+
+
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+    <title>[application name]</title>
+
+    <link rel="stylesheet" type="text/css" media="all" href="css/console.css">
+    <link rel="stylesheet" type="text/css" media="all" href="css/malicious.css">
+
+  </head>
+
+<body>
+
+<!-- cn04 / tobspr / rdb / pmpp
+
+Chromium 48 : OK
+
+Safari ?
+
+Firefox ?
+
+
+-->
+
+
+<span id='controls'>
+  <span><a href="#" onclick="switchCon()">Console</a></span>
+  <span><input type="checkbox" id="resize">Resize canvas</span>
+  <span><input type="checkbox" id="pointerLock" checked>Lock/hide mouse pointer &nbsp;&nbsp;&nbsp;</span>
+  <span><input type="button" value="Fullscreen" onclick="enterFullScreen();"></span>
+  <span id='ldstatus'>Downloading...</span>
+</span>
+
+
+<div id="mydiv">
+    <div id="mydiv-container">
+    <textarea id="output" cols="136" rows="8"></textarea>
+    </div>
+</diV>
+
+
+<center>
+
+<div id="main">
+
+
+    <div id="ld">
+        <img id="logo" src="rsr/logo.png" alt="[logo]">
+        <span id="ldtext">Uh, you have JavaScript disabled. This application won't work.</span>
+
+        <div id="ldbar-label">
+        <span id="ld_asm">ASM :</span>
+        <div id="ldbar-outer">
+            <div id="ldbar_asm"></div>
+        </div>
+        </div>
+
+
+        <p>
+        <div id="ldbar-label">
+        <span id="ld_mem">MEM :</span>
+        <div id="ldbar-outer">
+            <div id="ldbar_mem"></div>
+        </div>
+        </div>
+
+    <span id="credits">Powered by Panda3D and Emscripten</span>
+    </div>
+
+</div>
+
+<p>
+
+<canvas id="canvas" style="display:none;" oncontextmenu="event.preventDefault()"></canvas>
+
+</center>
+
+<script type="text/javascript">
+//=============================================================
+var ldtext = document.getElementById("ldtext");
+    ldtext.innerHTML="Testing compatibility...";
+
+function switchCon(){
+    var target = 'mydiv';
+
+    if (document.getElementById(target).style.display == 'block'){
+        document.getElementById(target).style.display = 'none';
+    } else {
+        document.getElementById(target).style.display = 'block';
+    }
+}
+//=============================================================
+</script>
+
+<script type="text/javascript" src="webfrost.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,351 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Frameset//EN" "http://www.w3.org/TR/html4/frameset.dtd">
+
+<html>
+
+<head>
+    <title>Bamboo forest for panda3d Demo</title>
+
+    <style>
+        .codearea {
+            background-color:#000;
+            color:#fff;
+            font-family:'Oxygen Mono', Consolas, 'Liberation Mono', 'DejaVu Sans Mono', monospace;
+            font-size:14px;
+            overflow:auto
+        }
+        div, textarea {
+            height:100%;
+            width:98%
+        }
+      body {
+        font-family: arial;
+        margin: 0;
+        padding: none;
+      }
+    </style>
+
+    <script type="text/javascript"
+        src="https://cdn.rawgit.com/brython-dev/brython/master/www/src/brython.js">
+    </script>
+
+
+</head>
+
+<body onload="brython(1);">
+
+</script>
+
+
+<script type="text/python">
+# -*- coding: utf-8 -*-
+import sys
+import traceback
+
+from browser import document as doc
+from browser import window, alert, console
+
+try:
+    import __builtin__
+except:
+    print("running in brython")
+    from browser import window
+    __builtin__ = window
+
+class JSWrap:
+    def __init__(self,js_object):
+        self.js = js_object
+
+#========================= access to panda3d c++ object ===========================
+class Emscripted(JSWrap):
+
+    def int(self,fname,*argv):
+        return self.js.Module.ccall(fname,'number',['number'],argv)
+
+    def pfwrite(self,fullpath,data,r=True,w=True):
+        if fullpath[0]!='/':
+            fullpath='/%s' % fullpath
+        path,fn = fullpath.rsplit('/',1)
+        try:
+            self.js.FS.deleteFile(fullpath)
+        except:
+            # file AND directory may not exist at all  FS.createFolder("/", "name", true, true);
+            if path and path!='/':
+                if path[0]=='/':
+                    self.js.FS.createPath('/',path[1:],True,True)
+                else:
+                    self.js.FS.createPath('/',path,True,True)
+
+        self.js.FS.createDataFile(path,fn,data,True,True)
+        print(path,fn,len(data),'written at',fullpath)
+
+#========================= dnd code window using codemirror / repl skulpt ? ===========================
+class CodeEdit(JSWrap):
+
+    def getText(self):
+        return self.js.EDIT.getValue()
+
+
+#=========================== host a bunch of functions under a simply called  bridge object ========================
+
+class CG(object):
+    name = '(CG)'
+
+    code_paste = '/tmp/bamboo.py' ;
+
+    def err(self,*data):
+        self._err.append( ' '.join(data) )
+
+    def __init__(self):
+        self._err=list()
+        self.emc=None
+        self.edi=None
+
+    def fwrite(self,fn,data):
+        if self.emc is None:
+            return
+        self.emc.pfwrite(fn,data)
+
+    def fcopy(self,url,dst):
+        self.emc.pfwrite( dst, open(url).read() )
+
+    def setup(self,src):
+        try:
+            self.emc = Emscripted(src.p3dw)
+        except:
+            err("iframe of Emscripten panda3d-webgl not reachable")
+            self.emc = None
+
+        self.edi = CodeEdit( src.peditor )
+        return self
+
+    def __str__(self):
+        return self.name
+
+#===================== get the bridge visible
+Cg = CG()
+__builtin__.Cg = Cg
+
+
+#========================= console =========================
+
+def err(*data):
+    Cg.err(*data)
+
+def write(data):
+    pcode.value += str(data)
+
+inited = False
+
+sys.stdout.write = sys.stderr.write = write
+history = []
+current = 0
+_status = "main"  # or "block" if typing inside a block
+
+def pinit():
+    global inited
+    if inited:
+        return
+
+    from browser import window
+    window.Cg.setup(window)
+    inited=True
+
+def pexec(data=None):
+    pinit()
+    if data is None:
+        data = Cg.edi.getText()
+    #print("preprocessing:", len( data ) )
+
+    Cg.fwrite( Cg.code_paste ,data)
+
+    #preprocessor(data))
+
+
+
+# execution namespace
+editor_ns = {
+    '__name__':'__main__',
+    'w'    : window,
+    'run'  : pexec,
+}
+
+
+def cursorToEnd(*args):
+
+    pos = len(pcode.value)
+    pcode.setSelectionRange(pos, pos)
+    pcode.scrollTop = pcode.scrollHeight
+
+def get_col(area):
+    # returns the column num of cursor
+    sel = pcode.selectionStart
+    lines = pcode.value.split('\n')
+    for line in lines[:-1]:
+        sel -= len(line) + 1
+    return sel
+
+
+def myKeyPress(event):
+    global _status, current
+    if event.keyCode == 9:  # tab key
+        event.preventDefault()
+        pcode.value += "    "
+    elif event.keyCode == 13:  # return
+        src = pcode.value
+        if _status == "main":
+            currentLine = src[src.rfind('>>>') + 4:]
+        elif _status == "3string":
+            currentLine = src[src.rfind('>>>') + 4:]
+            currentLine = currentLine.replace('\n... ', '\n')
+        else:
+            currentLine = src[src.rfind('...') + 4:]
+        if _status == 'main' and not currentLine.strip():
+            pcode.value += '\n>>> '
+            event.preventDefault()
+            return
+        pcode.value += '\n'
+        history.append(currentLine)
+        current = len(history)
+
+        prompt = True
+
+        if _status == "main" or _status == "3string":
+            try:
+                _ = editor_ns['_'] = eval(currentLine, editor_ns)
+                if _ is not None:
+                    write(repr(_)+'\n')
+                _status = "main"
+            except IndentationError:
+                prompt = False
+                _status = "block"
+            except SyntaxError as msg:
+                if str(msg) == 'invalid syntax : triple string end not found' or \
+                    str(msg).startswith('Unbalanced bracket'):
+                    prompt = False
+                    _status = "3string"
+                elif str(msg) == 'eval() argument must be an expression':
+                    try:
+                        exec(currentLine, editor_ns)
+                    except:
+                        traceback.print_exc()
+                    _status = "main"
+                elif str(msg) == 'decorator expects function':
+                    prompt = False
+                    _status = "block"
+                else:
+                    traceback.print_exc()
+                    _status = "main"
+            except:
+                traceback.print_exc()
+                _status = "main"
+        elif currentLine == "":  # end of block
+            block = src[src.rfind('>>>') + 4:].splitlines()
+            block = [block[0]] + [b[4:] for b in block[1:]]
+            block_src = '\n'.join(block)
+            # status must be set before executing code in globals()
+            _status = "main"
+            try:
+                _ = exec(block_src, editor_ns)
+                if _ is not None:
+                    print(repr(_))
+            except:
+                traceback.print_exc()
+        else:
+            prompt = False
+
+        while window.Cg._err:
+            write(" * %s\n"% Cg._err.pop(0) )
+        pcode.value += ( ( prompt and '>>> ') or '... ' )
+        cursorToEnd()
+        event.preventDefault()
+
+def myKeyDown(event):
+    global _status, current
+    if event.keyCode == 37:  # left arrow
+        sel = get_col(pcode)
+        if sel < 5:
+            event.preventDefault()
+            event.stopPropagation()
+    elif event.keyCode == 36:  # line start
+        pos = pcode.selectionStart
+        col = get_col(pcode)
+        pcode.setSelectionRange(pos - col + 4, pos - col + 4)
+        event.preventDefault()
+    elif event.keyCode == 38:  # up
+        if current > 0:
+            pos = pcode.selectionStart
+            col = get_col(pcode)
+            # remove current line
+            pcode.value = pcode.value[:pos - col + 4]
+            current -= 1
+            pcode.value += history[current]
+        event.preventDefault()
+    elif event.keyCode == 40:  # down
+        if current < len(history) - 1:
+            pos = pcode.selectionStart
+            col = get_col(pcode)
+            # remove current line
+            pcode.value = pcode.value[:pos - col + 4]
+            current += 1
+            pcode.value += history[current]
+        event.preventDefault()
+    elif event.keyCode == 8:  # backspace
+        src = pcode.value
+        lstart = src.rfind('\n')
+        if (lstart == -1 and len(src) < 5) or (len(src) - lstart < 6):
+            event.preventDefault()
+            event.stopPropagation()
+
+pcode = doc['pcode']
+
+pcode.bind('keypress', myKeyPress)
+pcode.bind('keydown', myKeyDown)
+pcode.bind('click', cursorToEnd)
+v = sys.implementation.version
+pcode.value = """Browser Panda3d (Brython-%s.%s.%s)
+ - Type run() to exec code editor -
+%s %s
+>>> """ % ( v[0], v[1], v[2], window.navigator.appName, window.navigator.appVersion)
+pcode.focus()
+cursorToEnd()
+</script>
+
+
+
+
+
+<table width=100%>
+<tr width=100%>
+    <td width=40%>
+    <center>
+        <!-- brython thread1 -->
+        <table id=banner cellpadding=0 cellspacing=0>
+            <tr id=banner_row >
+        </table>
+
+        <textarea id=pcode class=codearea rows=14></textarea>
+
+        <div id=content></div>
+
+        <!-- brython thread2 -->
+        <iframe width=100% height=500px id="intrants" src="intrants.html"></iframe>
+    </center>
+    </td>
+
+    <td width=60%>
+    <center>
+        <!-- cpython/panda3d thread -->
+        <iframe  width=98% height=768px id="screen" src="malicious.html"
+            allowfullscreen="true" webkitallowfullscreen="true" mozallowfullscreen="true"
+            sandbox="allow-pointer-lock allow-same-origin allow-scripts">
+        </iframe>
+        <!-- -->
+    </center>
+    </td>
+</tr>
+</table>
+
+</body>
+
+
+</html>
