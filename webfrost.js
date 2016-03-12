@@ -397,7 +397,8 @@ if ( fileExists(  MEMORY_FILE ) ){
         ldbar_mem.style.width = '100%';
         fk_xhr.response = result;
         fk_xhr.status = 200 ;
-        window.MEM_OK(fk_xhr);
+        try { window.MEM_OK(fk_xhr); }
+        catch (x) {  } ;
     }
 
     function mem_transferComplete(evt){
