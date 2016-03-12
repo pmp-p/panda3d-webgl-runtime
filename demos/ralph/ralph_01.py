@@ -33,14 +33,14 @@ import math
 # Function to put instructions on the screen.
 def addInstructions(pos, msg):
     return OnscreenText(text=msg, style=1, fg=(1, 1, 1, 1), scale=.05,
-                        shadow=(0, 0, 0, 1), parent=base.a2dTopLeft,
+                        parent=base.a2dTopLeft,
                         pos=(0.08, -pos - 0.04), align=TextNode.ALeft)
 
 # Function to put title on the screen.
 def addTitle(text):
     return OnscreenText(text=text, style=1, fg=(1, 1, 1, 1), scale=.07,
                         parent=base.a2dBottomRight, align=TextNode.ARight,
-                        pos=(-0.1, 0.09), shadow=(0, 0, 0, 1))
+                        pos=(-0.1, 0.09))
 
 
 class RoamingRalphDemo(ShowBase):
