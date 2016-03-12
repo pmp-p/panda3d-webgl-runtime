@@ -278,16 +278,30 @@ function VFS_getAssetDbg(tn){
     return 1;
 }
 
-function VFS_getAsset(tn){
+var FMap  = {};
 
-    if (tn == 'tmp/bamboo.py'){
-        if (window.code_paste=='')
-            return -1;
-        window.code_paste='';
+function endsWith(str, suffix) {
+    return str.indexOf(suffix, str.length - suffix.length) !== -1;
+}
+
+function VFS_getAsset(tnraw){
+
+    if ( endsWith(tnraw,'.py')){
+
+        if (tnraw == 'tmp/bamboo.py'){
+            if (window.code_paste=='')
+                return -1;
+            window.code_paste='';
+        } else {
+            //FIXME: always reload python code add a ?v=xxxx brython like trick to get caching off
+        }
+    } else {
+        if ( tnraw in FMap)
+            return FMap[tnraw];
     }
 
     // console.log("VFS_getAsset : '" + tn +"'");
-
+    tn = tnraw ;
     if (tn.charAt(0)=='/'){
         turl = URL_BASE + tn;
     } else {
@@ -306,7 +320,7 @@ function VFS_getAsset(tn){
     console.log("VFS_getAsset : "+turl+' as '+tn);
     // progress on transfers from the server to the client (downloads)
     window.currentTransferSize = 0 ;
-    window.currentTransfer = tn;
+    window.currentTransfer = tnraw;
 
     var oReq = new XMLHttpRequest();
 
@@ -321,17 +335,18 @@ function VFS_getAsset(tn){
     }
 
     function transferComplete(evt) {
-      if (oReq.status==404){
+        if (oReq.status==404){
             console.log("VFS_getAsset: File not found : "+ tB_name + ' in ' + (tD_name || '/') );
             window.currentTransferSize = -1 ;
-      } else {
-        console.log("VFS_getAsset: Transfer is complete saving : "+tB_name + " in " + ( tD_name || '/' ));
-        var arraybuffer = oReq.response;
-        window.currentTransferSize = arraybuffer.length;
-        FS.createPath('/',tD_name,true,true);
-        FS.createDataFile(tD_name,tB_name, arraybuffer, true, true);
-      }
 
+        } else {
+            console.log("VFS_getAsset: Transfer is complete saving : "+tB_name + " in " + ( tD_name || '/' ));
+            var arraybuffer = oReq.response;
+            window.currentTransferSize = arraybuffer.length;
+            FS.createPath('/',tD_name,true,true);
+            FS.createDataFile(tD_name,tB_name, arraybuffer, true, true);
+        }
+        FMap[window.currentTransfer] = window.currentTransferSize;
     }
 
     function transferFailed(evt) {
@@ -349,6 +364,7 @@ function VFS_getAsset(tn){
 
     oReq.open("GET",turl,false);
     oReq.send();
+
     return window.currentTransferSize;
 }
 
@@ -397,8 +413,7 @@ if ( fileExists(  MEMORY_FILE ) ){
         ldbar_mem.style.width = '100%';
         fk_xhr.response = result;
         fk_xhr.status = 200 ;
-        try { window.MEM_OK(fk_xhr); }
-        catch (x) {  } ;
+        window.MEM_OK(fk_xhr);
     }
 
     function mem_transferComplete(evt){
