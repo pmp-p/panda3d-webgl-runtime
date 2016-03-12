@@ -1,0 +1,244 @@
+<html>
+<head>
+
+    <link rel="stylesheet" type="text/css" media="all" href="css/editor/codemirror.css">
+    <link rel="stylesheet" type="text/css" media="all" href="css/editor/solarized.css">
+    <link rel="stylesheet" type="text/css" media="all" href="css/editor/main.css">
+
+<!-- script src="../js/jquery.1.6.2.js" type="text/javascript"></script -->
+<script type="text/javascript" src="https://code.jquery.com/jquery-1.12.1.min.js"></script>
+
+<script type="text/javascript" src="js/editor/codemirrorepl.js" ></script>
+<script type="text/javascript" src="js/editor/repl.js" type="text/javascript"></script>
+<script type="text/javascript" src="js/editor/python.js" type="text/javascript"></script>
+<script type="text/javascript" src="js/editor/env/editor.js" type="text/javascript"></script>
+
+<script type="text/javascript"
+    src="https://cdn.rawgit.com/brython-dev/brython/master/www/src/brython.js">
+</script>
+
+<style>
+#drop_zone {
+  border: 2px dashed #bbb;
+  border-radius: 5px;
+  padding: 25px;
+  text-align: center;
+  font: 20pt bold;
+  color: #bbb;
+}
+
+
+</style>
+
+
+
+</head>
+
+
+<body onLoad="brython(1)">
+
+
+
+<center>
+
+<table border=1 width=80%  style="border: 1px;">
+
+    <tr>
+        <td>
+<div id="drop_zone">Drop textures/egg</div>
+
+
+        </td>
+        <td>
+        <button id=bprev>Previous</button>
+        <button id=bnext>Next</button>
+        <button id=bresample>Resample</button>
+        <button id=bhost>Host</button>
+        <button onclick="bedit()">Edit</button>
+        <button onclick="bremove()">Remove</button>
+        </td>
+    </tr>
+
+    <tr>
+        <td>
+        <output id="list"></output>
+        </td>
+        <td>
+
+<!--
+            <video autoplay id="vid" style="display:none;"></video>
+-->
+            <canvas id="canvas" width="640" height="480" style="border:1px solid #d3d3d3;"></canvas><br>
+
+        </td>
+    </tr>
+
+</table>
+
+</center>
+
+
+
+
+<script type="text/python">
+from browser import document, alert, window
+import browser.html as html
+import sys
+
+reader = None
+
+def on_load(ev):
+    global reader
+    print(reader.result)
+
+def handleFileSelect(evt):
+    global reader
+
+    evt.stopPropagation()
+    evt.preventDefault()
+
+    files = evt.dataTransfer.files # FileList object.
+    print(files)
+
+    table = html.TABLE()
+
+    # files is a FileList of File objects. List some properties.
+    output = []
+    #_ul=html.UL()
+    for f in files:
+        row = html.TR() # create a row
+        details= '%s(%s) - %s bytes, last modified: %s' % (f.name,f.type or 'n/a',f.size,f.lastModifiedDate if f.lastModifiedDate else 'n/a')
+
+        if str(f.type).startswith('text'):
+            print("got text")
+            reader = open(f,'rb')
+            print(reader)
+            reader.onload = on_load
+            row <= html.TD('')
+        else:
+
+            print("got image")
+            _im=html.IMG()
+            _im.src = window.URL.createObjectURL(f)
+            _im.height=60
+            row <= html.TD(_im)
+
+        row <= html.TD( details )
+        table <= row
+    document['list'] <= table
+
+
+def handleDragOver(evt):
+    evt.stopPropagation()
+    evt.preventDefault()
+    evt.dataTransfer.dropEffect = 'copy' # Explicitly show this is a copy.
+
+# Setup the dnd listeners.
+dropZone = document['drop_zone']
+dropZone.bind('dragover', handleDragOver )
+dropZone.bind('drop', handleFileSelect )
+
+class unbound:
+    def __init__(self,wdg,method):
+        self.wdg = wdg
+        self.method = method
+        self.wdg.bind( method , self.unbound  )
+
+    def unbound(self,*args):
+        alert("'%s' unbound method '%s'" % (self.wdg.id,self.method) )
+
+
+class AutoEventBase:
+    def __init__(self,doc):
+        self.doc = doc
+        self.ub = list()
+
+        buttons = document.get(selector="button")
+        for button in buttons:
+            if hasattr(self,button.id):
+                print( '%s->%s( %s )' % ( self, button.id , getattr(self,button.id) ) )
+                button.bind( 'click' , getattr(self,button.id) )
+            else:
+                self.nobind(button,'click')
+
+    def nobind(self,wdg,meth='click'):
+        print(wdg.id,'->%s(unbound)' % meth)
+        self.ub.append( unbound( wdg , 'click' ) )
+
+
+    def __str__(self):
+        return 'AE'
+
+class AE(AutoEventBase):
+
+    def bhost(self,*args):
+        print("heavy Load coming")
+        import pygame
+        print("done")
+        alert("Hello %s !" % pygame )
+
+
+print("---------------- intrants ------------------")
+print( sys.modules[__name__] )
+AE(document)
+print("---------------- /intrants ------------------")
+
+
+</script>
+<script type="text/javascript">
+//window.parent.peditor = document.querySelector("#code");
+window.parent.peditor = window;
+</script>
+
+<!--
+
+<script type="text/javascript">
+
+    var video = document.querySelector("#vid");
+    var canvas = document.querySelector('#canvas');
+    var ctx = canvas.getContext('2d');
+    var localMediaStream = null;
+
+    var onCameraFail = function (e) {
+        console.log('Camera did not work.', e);
+    };
+
+    function snapshot() {
+        if (localMediaStream) {
+            ctx.drawImage(video, 0, 0);
+        }
+    }
+
+    navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+    window.URL = window.URL || window.webkitURL;
+    navigator.getUserMedia({video:true}, function (stream) {
+        video.src = window.URL.createObjectURL(stream);
+        localMediaStream = stream;
+    }, onCameraFail);
+
+</script>
+-->
+
+
+
+<div class="page">
+<div class="body">
+<div class="main">
+<p>
+Drop python code file here
+<textarea id="code" cols="132" rows="25" width=1000px>
+</textarea>
+
+<a href="#" id="clearoutput"></a>
+<div style="display:none;">
+<pre id="edoutput"></pre>
+<div id="mycanvas" height="10px"></div>
+<textarea id="interactive" cols="85" rows="2" ></textarea>
+</div>
+
+</div>
+</div>
+</div>
+
+</body>
+</html>
