@@ -385,7 +385,7 @@ Module['callfs']  = VFS_getAsset;
 //***********************  EM LOADER SPARE PART ******************************************
 
 function fk_addEventListener(evt,tgt){
-    console.log( 'fk_addEventListener '+evt+' '+tgt);
+    //console.log( 'fk_addEventListener '+evt+' '+tgt);
     window.MEM_OK = tgt;
 }
 
@@ -413,7 +413,8 @@ if ( fileExists(  MEMORY_FILE ) ){
         ldbar_mem.style.width = '100%';
         fk_xhr.response = result;
         fk_xhr.status = 200 ;
-        window.MEM_OK(fk_xhr);
+        try { window.MEM_OK(fk_xhr); }
+        catch (x) { } 
     }
 
     function mem_transferComplete(evt){
