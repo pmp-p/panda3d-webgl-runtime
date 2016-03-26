@@ -1,0 +1,177 @@
+<html>
+
+<head>
+    <script type="text/javascript"
+        src="https://cdn.rawgit.com/brython-dev/brython/master/www/src/brython.js">
+    </script>
+
+    <script type="text/javascript"
+        src="http://code.jquery.com/jquery-1.12.1.min.js">
+    </script>
+
+    <style>
+    textarea {
+        width:99% ;
+    }
+    .codearea {
+        background-color:#000000;
+        color:#fff;
+        font-family:'Oxygen Mono', Consolas, 'Liberation Mono', 'DejaVu Sans Mono', monospace;
+        font-size:12px;
+        //overflow: auto;
+
+
+        overflow: scroll;
+        overflow-x: hidden;
+
+
+    }
+
+    .termlog {
+        white-space: pre;
+        word-wrap: normal;
+        overflow: scroll;
+        //overflow-x: hidden;
+        font-size:10px;
+        content-editable : false;
+    }
+
+    .linereader {
+        background-color: transparent;
+        width:99% ;
+        border: 0px;
+        outline: none;
+        -webkit-box-shadow: none;
+        -moz-box-shadow: none;
+        box-shadow: none;
+        //color:transparent;
+        cursor:default;
+    }
+    </style>
+
+</head>
+
+<body onload="brython(1);">
+
+<!--
+tabbed view here ?
+-->
+
+Server Console: <br />
+<textarea id=pcode class=codearea spellcheck=false rows=8></textarea>
+
+Terminal + Log: <br />
+<textarea id="logterm" class=termlog spellcheck=false readonly="readonly" editable=false cols="132" rows="25"></textarea>
+<!-- <textarea id=linereader class=linereader style="width:98%" >&gt;&gt;&gt; </textarea> -->
+
+<input type=text id=linereader class=linereader spellcheck=false>
+
+<input type=text id=em_char class=creader spellcheck=false>
+
+
+
+
+
+<script type="text/javascript">
+
+window.state_idle=0;
+window.last_idlecheck = -1;
+
+function log(val) {
+    $("#logterm").val(val + "\n" + $("#logterm").val());
+}
+
+/*
+function getNewInsertion(oldValue, newValue, newPosition) {
+
+    var type='';
+    var from=0;
+    var length=0;
+    var text='';
+
+    if(oldValue.length > newValue.length) {
+        type = 'del';
+        changeLength = oldValue.length - newValue.length;
+        pos = newPosition;
+        text = oldValue.substr(pos, changeLength);
+    } else {
+        type = 'ins';
+        changeLength = newValue.length - oldValue.length;
+        pos = newPosition - changeLength;
+        text = newValue.substr(pos, changeLength);
+    }
+    window.state_idle +=1;
+    //log("evt " +window.state_idle+' "'+text+'"  '+type+' @' +pos);
+    return {text:text, type:type, position: pos, changeLength: changeLength};
+}
+
+
+$(function() {
+
+    $("#linereader").data("old_value", $("#linereader").val());
+
+    $("#linereader").bind("paste cut keydown",function(e) {
+        var that = this;
+        setTimeout(function() {
+                if(typeof $(that).data("old_value") == "undefined") {
+                    $(that).data("old_value",$(that).val());
+                }
+
+
+                getNewInsertion($(that).data("old_value"), $(that).val(), e.target.selectionStart);
+                $(that).data("old_value",$(that).val());
+            },200);
+
+    })
+
+});
+
+*/
+
+$("#linereader").focus();
+
+var LRead = document.getElementById("linereader");
+var em_char = document.getElementById("em_char");
+if (window.parent.em_char)
+    console.log("@@@@@@@@@@@@@@ CANT SET em_char @@@@@@@@@@@@@@@@@");
+else
+    window.parent.em_char = em_char ;
+
+window.parent.LRead = LRead;
+window.parent.LRead.onkeyup = window.parent.readline ;
+
+LRead.value = 'execfile("plugbase/index.py")';
+LRead.value = 'execfile("plugbase/ui/lui/__init__.py")';
+//LRead.value = 'execfile("demos/asteroids/asteroids_01.py")' ;
+//LRead.value = 'execfile("demos/ralph/ralph_01.py")';
+
+
+/*
+
+
+execfile("plugbase/index.py")
+execfile("plugbase/ui/lui/__init__.py")
+execfile("index.py.lui")
+execfile("demos/ralph/ralph_01.py")
+execfile("demos/asteroids/asteroids_01.py")
+
+
+*/
+//window.parent.CRead  = CRead;
+//window.parent.getchar_hook();
+
+
+window.parent.c_stdout =  document.getElementById("logterm");
+</script>
+
+<script type="text/python" charset="utf-8"
+    src="../canes/forest.py">
+</script>
+<br />
+<br />
+
+<hr>
+<span id="credits">Powered by <a href=="http://http://www.panda3d.org/">Panda3D</a> and <a href="http://kripken.github.io/emscripten-site/">Emscripten</a></span>
+    // <span id="credits">see <a href="https://trello.com/c/R3HOXRXs/51-webgl-support">Panda3d-webgl roadmap</A></span>
+</body>
+</html>
