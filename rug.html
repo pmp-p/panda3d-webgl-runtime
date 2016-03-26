@@ -131,17 +131,18 @@ html, body {
 <div id="theBackground"><img src="rug/bamboo-blind.jpg" alt="theBackground" /></div>
 
 <script type="text/javascript">
+$(function() {
+    $("#editor").colResizable({
+        liveDrag: true,
+        gripInnerHtml: "<div class='grip'></div>",
+        draggingClass: "dragging",
+    });
 
-$("#editor").colResizable({
-    liveDrag: true,
-    gripInnerHtml: "<div class='grip'></div>",
-    draggingClass: "dragging",
-});
 
-
-$('#theBackground').backgrounder({element : 'body'});
-
+    $('#theBackground').backgrounder({element : 'body'});
+}
 </script>
+
 <script async=true defer=true type="text/plain" language="Javascript">
     src="https://raw.githubusercontent.com/pmp-p/panda3d-webgl-runtime/master/webfrost.js">
 </script>
