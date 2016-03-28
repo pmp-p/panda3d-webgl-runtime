@@ -4,34 +4,6 @@ console.log('webfrost: Go Pods !            '+window.location.href.indexOf('loca
 setdefault('autorun',true);
 setdefault( 'autorun', window.location.href.indexOf('localhost')!=7 );
 
-
-//mandatory !
-var ldstatus = document.getElementById("status");
-var LRead = document.getElementById("linereader");
-var em_ctrl = document.getElementById('em_ctrl');
-var em_keys = document.getElementById('em_keys');
-var em_char = document.getElementById("em_char");
-
-var em_char_len_was = 0 ;
-var em_char_serial = 0 ;
-var em_char_last   = 0 ;
-
-var c_stdout = document.getElementById("c_stdout");
-// file access code cache
-var FMap  = {};
-
-var Bat = { 'c':'c' , 'l':'l', 'd':'d' } ;
-
-var pagename = window.location.pathname.split('/').pop();
-
-var ldbar_asm = document.getElementById("ldbar_asm");
-var ldbar_mem = document.getElementById("ldbar_mem");
-var ld_asm = document.getElementById("ld_asm");
-var ld_mem = document.getElementById("ld_mem");
-var ld = document.getElementById("ld");
-
-var canvas = document.getElementById("canvas");
-
 setdefault('WEBFROST_EMSCRIPT','pandawgl');
 setdefault('WEBFROST_MEM',true);
 setdefault('ASM_SIZE', 34737691); // 33 * 1024 * 1024);
@@ -43,6 +15,94 @@ if (setdefault('JSDIR','./js/')){
     console.log("    *-- JSDIR set-up is required to have lzma workers");
     console.log("    *-- Javascript include dir is set to :"+JSDIR);
 }
+
+
+//mandatory !
+var ldstatus = document.getElementById("status");
+var LRead = document.getElementById("linereader");
+
+// deprecated
+var em_ctrl = document.getElementById('em_ctrl');
+var em_keys = document.getElementById('em_keys');
+var em_char = document.getElementById("em_char");
+var em_char_len_was = 0 ;
+var em_char_serial = 0 ;
+var em_char_last   = 0 ;
+
+// how many lines to keep in memory for stdout console
+var SCROLL_BACKLOG = 100;
+
+// where do theses lines can display
+var c_stdout = document.getElementById("c_stdout");
+var c_stdout_tty = false;
+
+
+// code file access cache
+var FMap  = {};
+
+// small battery status  C/charge L/oading  D/ischarge time
+var Bat = { 'c':'c' , 'l':'l', 'd':'d' } ;
+
+
+
+var Queue = function() {
+    var functionSet=(function() {
+        var _elements=[]; // creating a private array
+        return [
+            // push function
+            function()
+            { return _elements.push .apply(_elements,arguments); },
+            // shift function
+            function()
+            { return _elements.shift .apply(_elements,arguments); },
+            function() { return _elements.length; },
+            function(n) { return _elements.length=n; }
+        ];
+    })();
+    this.push=functionSet[0];
+    this.shift=functionSet[1];
+    Object.defineProperty(this,'length',{
+        'get':functionSet[2],
+        'set':functionSet[3],
+        'writeable':true,
+        'enumerable':false,
+        'configurable':false
+    });
+    // initializing the queue with given arguments
+    this.push.apply(this,arguments);
+}
+
+
+
+
+window.kbQ = new Queue() ;
+window.Kreadlines = new Queue() ;
+
+window.buf = Object();
+window.buf.stdin = new Queue();
+window.buf.stdout = new Queue();
+window.buf.stderr = new Queue();
+window.buf.traceback = new Queue();
+
+
+
+window.traceback = new Queue();
+window.trace = false;
+//unused
+window.trace_trigger = false;
+
+
+var ldbar_asm = document.getElementById("ldbar_asm");
+var ldbar_mem = document.getElementById("ldbar_mem");
+var ld_asm = document.getElementById("ld_asm");
+var ld_mem = document.getElementById("ld_mem");
+var ld = document.getElementById("ld");
+
+var canvas = document.getElementById("canvas");
+
+
+
+var pagename = window.location.pathname.split('/').pop();
 
 URL_BASE = window.location.href.replace("/"+pagename,"").replace("#","");
 
@@ -82,8 +142,6 @@ Licenses:
     BrowserFS:
     MIT License https://github.com/jvilk/BrowserFS
 
-    JSON-js:
-    https://github.com/douglascrockford/JSON-js
 =============================================================
 
 */
@@ -129,39 +187,6 @@ function setStatus(status_text){
     }
     ldstatus.innerHTML = status_text ;
 }
-
-var Queue = function() {
-    var functionSet=(function() {
-        var _elements=[]; // creating a private array
-        return [
-            // push function
-            function()
-            { return _elements.push .apply(_elements,arguments); },
-            // shift function
-            function()
-            { return _elements.shift .apply(_elements,arguments); },
-            function() { return _elements.length; },
-            function(n) { return _elements.length=n; }
-        ];
-    })();
-    this.push=functionSet[0];
-    this.shift=functionSet[1];
-    Object.defineProperty(this,'length',{
-        'get':functionSet[2],
-        'set':functionSet[3],
-        'writeable':true,
-        'enumerable':false,
-        'configurable':false
-    });
-    // initializing the queue with given arguments
-    this.push.apply(this,arguments);
-}
-
-
-window.kbQ = new Queue() ;
-window.Kreadlines = new Queue() ;
-window.scrollbuffer = new Queue();
-
 
 
 
@@ -315,15 +340,15 @@ function lockChangeAlert() {
         window.KLock = true;
         window.KEditing = false;
         canvas.focus();
-        if (em_char)
-            em_char.focus();
+        //if (em_char)
+          //  em_char.focus();
     } else {
-        console.log('lockChangeAlert: Un-locked - turning on bridge.stdin on');
+        console.log('lockChangeAlert: Un-locked ');
         window.KLock = false;
-        canvas.blur();
 
         if (LRead){
-            console.log('lockChangeAlert->LRead');
+            console.log('lockChangeAlert->LRead - turning on bridge.stdin on');
+            canvas.blur();
             window.KEditing = true;
             LRead.focus();
         }
@@ -377,6 +402,28 @@ function handlefocus(e){
     return true;
 }
 
+
+function handlefocusC(e){
+
+    if(e.type=='mouseover'){
+        console.log('handlefocusC(in)->canvas');
+        canvas.focus();
+        window.KEditing = false;
+        return false;
+    }
+
+    if(e.type=='mouseout'){
+        canvas.blur();
+        window.KEditing = true;
+        window.KLock = false ;
+        if (LRead){
+            console.log('handlefocusC(out)->LRead');
+            LRead.focus();
+        }
+        return false;
+    }
+    return true;
+}
 
 // output.jsbin.com/awenaq/4
 var Podium = {};
@@ -460,11 +507,10 @@ function getchar(e){
 }
 
 function canvas_hook(){
-    console.log('Begin: canvas.getchar');
     canvas.contentEditable = true;
     canvas.setAttribute('tabindex','0');
-    canvas.addEventListener('mouseover',handlefocus,false);
-    canvas.addEventListener('mouseout',handlefocus,false);
+    canvas.addEventListener('mouseover',handlefocusC,false);
+    canvas.addEventListener('mouseout',handlefocusC,false);
 
 }
 
@@ -492,6 +538,7 @@ function edit_keys(e) {
 
 
 function getchar_hook(){
+    console.log('Begin: canvas.getchar');
     //Good but need other control chars
     //window.em_ctrl.addEventListener('keydown',char_transfer,true)
     window.em_ctrl.addEventListener('keyup',char_transfer,true);
@@ -510,8 +557,9 @@ console.log('Begin: canvas.readline');
 
 
 function readline(e){
-    kc = e.keyCode||e.charCode ;
+    kc = e.which || e.keyCode||e.charCode ;
     if (kc == 13){
+        fc_stdout(LRead.value);
         console.log('readline('+ kc +') '+ LRead.value );
         window.Kreadlines.push(LRead.value);
         LRead.value = "";
@@ -555,6 +603,11 @@ var C_char = function (str) {
 }
 
 function BR_py2js(jsdata){
+    if (window.trace_trigger)
+        if (window.trace=='on')
+            window.trace='off';
+            // window.trace_trigger  is reset by the tracer function
+
     // try to parse json only if we have something to transmit to reduce load
     if (window.Kreadlines.length>0){
         try {
@@ -578,8 +631,9 @@ function BR_py2js(jsdata){
                     window.brdata['c']['i'] = rl ;
                     window.brdata['c']['si'] = 'w' ;
                 } else {
-                    //console.log('flushed interactive stdin ['+rl+']' );
-                    fc_stdout('>>> '+ rl );
+                    console.log('flushed interactive stdin [>>> '+rl+']' );
+                    if (!c_stdout_tty)
+                        fc_stdout('>>> '+ rl );
                     window.brdata['i']['i'] = rl ;
                     window.brdata['i']['si'] = 'w' ;
                 }
@@ -600,8 +654,65 @@ function BR_py2js(jsdata){
             jsdata = JSON.stringify( window.brdata );
         }
     }
-    window.C_bridge_push( C_char( jsdata ) );
+
+    if (window.C_bridge_push)
+        window.C_bridge_push( C_char( jsdata ) );
+    else
+        console.log('bridge not up');
     return jsdata.length;
+}
+
+function brget(who,dotname){
+    if (undef(dotname)){
+        console.error("BR_async_call window."+dotname+' is not defined');
+        return -1;
+    }
+// TODO handle dot path of objects.
+    return window[funcname]
+}
+
+function call_later(callerid,call,data){
+    result = call( data );
+    console.log('callerid : '+callerid+' result = ',result );
+}
+
+function BR_async_call(dotname,jsonstruct){
+
+    call = brget('BR_async_call',dotname)
+    if (!call)
+        return -1;
+    windows.jscall += 1;
+    callerid = 0+  windows.jscall ;
+
+    setTimeout(call_later , 1 , call , JSON.parse(jsonstruct) );
+    return callerid;
+}
+
+
+
+function BR_void(funcname){
+    call = brget('BR_void',dotname)
+    if (!call)
+        return -1;
+    call();
+//TODO: return >0 == exceptions
+    return 0;
+}
+
+
+function BR_void_parametric(dotname,jsonstruct){
+/* TODO:
+    https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Functions/arguments
+       - multi args call
+       - object
+*/
+    call = brget('BR_void_parametric',dotname)
+    if (!call)
+        return -1;
+
+    call(JSON.parse(jsonstruct));
+//TODO: return >0 == exceptions
+    return 0;
 }
 
 
@@ -666,9 +777,202 @@ console.log('End: canvas.size');
 
 //==================================== emscripten ===============================
 
+function BR_set(key,value){
+        window[key]=value;
+    console.log('window.'+key+' <= '+value );
+    return 'ok';
+}
+
+// emscripten - stdout / stderr
+
+function BR_trace(ft,set_it){
+    if (set_it)
+        window.trace = (window.trace =='on') ;
+
+    if (window.trace)
+        console.log('trace(on)')
+    else
+        console.log('trace(off)')
+}
+
+
+function fc_stderr(text){
+    if (arguments.length > 1)
+        text = Array.prototype.slice.call(arguments).join(' ');
+
+    /*
+    lt = text.split('\n');
+    for(i=0;i<lt.length;i++){
+        if (window.trace)
+            window.traceback.push( lt );
+
+    }
+    */
+    if (window.trace=='on')
+        buf.traceback.push( text );
+    console.error(text);
+}
+
+function fc_stdout(text){
+    if (arguments.length > 1)
+        text = Array.prototype.slice.call(arguments).join(' ');
+
+    lt = text.split('\n');
+
+    if (window.trace=='on')
+        for(i=0;i<lt.length;i++)
+            buf.traceback.push( lt[i] );
+
+    if (c_stdout && c_stdout_tty){
+        last_line = 0 ;
+        if (lt.length>1){
+            for(i=0;i<lt.length-1;i++)
+                c_stdout.print(lt[i])
+            last_line = lt.length-1;
+        } else
+            last_line = 0;
+
+        if (lt[last_line]!='>>> ')
+            c_stdout.print(lt[last_line])
+        else
+            c_stdout.write(lt[last_line])
+    }
+    console.log(text);
+}
+
+/*
+
+
+ (function() {
+        var element = document.getElementById('output');
+        if (element) element.value = ''; // clear browser cache
+        return function(text) {
+            if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+            // These replacements are necessary if you render to raw HTML
+            //text = text.replace(/&/g, "&amp;");
+            //text = text.replace(/</g, "&lt;");
+            //text = text.replace(/>/g, "&gt;");
+            //text = text.replace('\n', '<br>', 'g');
+            console.log(text);
+            if (element) {
+                element.value += text + "\n";
+                element.scrollTop = element.scrollHeight; // focus on bottom
+            }
+        };
+    })(),
+
+
+*/
+
+
+// emscripten - filesystem
+
+
+function setupBFS() {
+  // Constructs an instance of the backed file system.
+    var lsfs = new BrowserFS.FileSystem.XmlHttpRequest('directio');
+    BrowserFS.initialize(lsfs);
+
+    var BFS = new BrowserFS.EmscriptenFS();
+    //FS.init( em_c_stdin, em_c_stdout, em_c_stderr );
+    FS.createFolder(FS.root, '/srv', true, true);
+    FS.mount(BFS, {root: '/'}, 'srv');
+}
 
 
 
+
+function VFS_getAssetDbg(tn){
+    console.log("VFS_getDbg : '"+tn+"'");
+    return 1;
+}
+
+function VFS_getAsset(tnraw){
+
+    if ( endsWith(tnraw,'.py')){
+
+        if (tnraw == 'tmp/bamboo.py'){
+            if (window.code_paste=='')
+                return -1;
+            window.code_paste='';
+        } else {
+            //FIXME: always reload python code add a ?v=xxxx brython like trick to get caching off
+        }
+    } else {
+        if ( tnraw in FMap)
+            return FMap[tnraw];
+    }
+
+    // console.log("VFS_getAsset : '" + tn +"'");
+    tn = tnraw ;
+    if (tn.charAt(0)=='/'){
+        turl = URL_BASE + tn;
+    } else {
+        if (tn.charAt(0)=='.'){
+            turl = URL_BASE + '/' +  tn;
+        } else {
+            tn = '/'+tn
+            turl = URL_BASE + tn;
+        }
+    }
+
+    turl = turl.replace('/srv/','/');
+
+    var tD_name  = dirname(tn);
+    var tB_name = basename(tn);
+    console.log("VFS_getAsset : "+turl+' as '+tn);
+    // progress on transfers from the server to the client (downloads)
+    window.currentTransferSize = 0 ;
+    window.currentTransfer = tnraw;
+
+    var oReq = new XMLHttpRequest();
+
+    function updateProgress (oEvent) {
+      if (oEvent.lengthComputable) {
+        var percentComplete = oEvent.loaded / oEvent.total;
+        // ...
+      } else {
+        // / (window.currentTransferSize+1)
+        // Unable to compute progress information since the total size is unknown
+      }
+    }
+
+    function transferComplete(evt) {
+        if (oReq.status==404){
+            console.log("VFS_getAsset: File not found : "+ tB_name + ' in ' + (tD_name || '/') );
+            window.currentTransferSize = -1 ;
+
+        } else {
+            console.log("VFS_getAsset: Transfer is complete saving : "+tB_name + " in " + ( tD_name || '/' ));
+            var arraybuffer = oReq.response;
+            window.currentTransferSize = arraybuffer.length;
+            FS.createPath('/',tD_name,true,true);
+            FS.createDataFile(tD_name,tB_name, arraybuffer, true, true);
+        }
+        FMap[window.currentTransfer] = window.currentTransferSize;
+    }
+
+    function transferFailed(evt) {
+      console.log("VFS_getAsset: An error occurred while transferring the file : "+window.currentTransfer);
+    }
+
+    function transferCanceled(evt) {
+      console.log("VFS_getAsset: transfer "+window.currentTransfer+" has been canceled by the user.");
+    }
+    oReq.overrideMimeType("text/plain; charset=x-user-defined");
+    oReq.addEventListener("progress", updateProgress);
+    oReq.addEventListener("load", transferComplete);
+    oReq.addEventListener("error", transferFailed);
+    oReq.addEventListener("abort", transferCanceled);
+
+    oReq.open("GET",turl,false);
+    oReq.send();
+
+    return window.currentTransferSize;
+}
+
+
+// emscripten - loader
 
 
 function EMSCRIPTEN_RUN(){
@@ -774,62 +1078,10 @@ function EMSCRIPTEN_GET() {
 }
 
 
-function fc_stdout(text){
-    if (window.c_stdout){
-        if (arguments.length > 1)
-            text = Array.prototype.slice.call(arguments).join(' ');
-        lt = text.split('\n');
-        for(i=0;i<lt.length;i++){
-            window.scrollbuffer.push( lt );
-            if (window.scrollbuffer.length>25)
-                window.scrollbuffer.shift();
-            window.c_stdout.value += lt +' \n';
-            window.c_stdout.scrollTop = window.c_stdout.scrollHeight;
-        }
-    }
-    console.log(text);
-}
-
-/* emscripten configuration */
-/*
-
- (function() {
-        var element = document.getElementById('output');
-        if (element) element.value = ''; // clear browser cache
-        return function(text) {
-            if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
-            // These replacements are necessary if you render to raw HTML
-            //text = text.replace(/&/g, "&amp;");
-            //text = text.replace(/</g, "&lt;");
-            //text = text.replace(/>/g, "&gt;");
-            //text = text.replace('\n', '<br>', 'g');
-            console.log(text);
-            if (element) {
-                element.value += text + "\n";
-                element.scrollTop = element.scrollHeight; // focus on bottom
-            }
-        };
-    })(),
-
-*/
 
 
+/*                          emscripten configuration
 
-function setupBFS() {
-  // Constructs an instance of the backed file system.
-    var lsfs = new BrowserFS.FileSystem.XmlHttpRequest('directio');
-    BrowserFS.initialize(lsfs);
-
-    var BFS = new BrowserFS.EmscriptenFS();
-    //FS.init( em_c_stdin, em_c_stdout, em_c_stderr );
-    FS.createFolder(FS.root, '/srv', true, true);
-    FS.mount(BFS, {root: '/'}, 'srv');
-}
-
-
-
-
-/*
 
     =============================================================================================
     =============================================================================================
@@ -842,27 +1094,29 @@ function setupBFS() {
 var Module = {
 
     preRun: [ setupBFS ],
-
-    postRun: [ BR_Link , canvas_hook, getchar_hook, resize_gl ],
+//getchar_hook,
+    postRun: [ BR_Link , canvas_hook,  resize_gl ],
 
     print: fc_stdout,
 
-    printErr: function(text) {
-        if (arguments.length > 1)
-            text = Array.prototype.slice.call(arguments).join(' ');
-        if (0) {
-            // XXX disabled for safety typeof dump == 'function') {
-            dump(text + '\n'); // fast, straight to the real console
-        } else {
-            console.error(text);
-        }
-    },
+    printErr: fc_stderr,
 
     canvas: canvas ,
     setStatus: setStatus,
-    keyboardListeningElement : em_ctrl ,
+    keyboardListeningElement : canvas, //em_ctrl ,
     doNotCaptureKeyboard : false,
 };
+
+
+
+// install emscripten hooks
+
+Module['BR_py2js'] = BR_py2js ;
+Module['BR_KBR']  = BR_KBR ;
+Module['BR_trace'] =BR_trace ;
+Module['BR_set']  = BR_set;
+Module['callfs']  = VFS_getAsset;
+
 
 /*
 
@@ -878,104 +1132,6 @@ var Module = {
 
 */
 
-
-
-function VFS_getAssetDbg(tn){
-    console.log("VFS_getDbg : '"+tn+"'");
-    return 1;
-}
-
-function VFS_getAsset(tnraw){
-
-    if ( endsWith(tnraw,'.py')){
-
-        if (tnraw == 'tmp/bamboo.py'){
-            if (window.code_paste=='')
-                return -1;
-            window.code_paste='';
-        } else {
-            //FIXME: always reload python code add a ?v=xxxx brython like trick to get caching off
-        }
-    } else {
-        if ( tnraw in FMap)
-            return FMap[tnraw];
-    }
-
-    // console.log("VFS_getAsset : '" + tn +"'");
-    tn = tnraw ;
-    if (tn.charAt(0)=='/'){
-        turl = URL_BASE + tn;
-    } else {
-        if (tn.charAt(0)=='.'){
-            turl = URL_BASE + '/' +  tn;
-        } else {
-            tn = '/'+tn
-            turl = URL_BASE + tn;
-        }
-    }
-
-    turl = turl.replace('/srv/','/');
-
-    var tD_name  = dirname(tn);
-    var tB_name = basename(tn);
-    console.log("VFS_getAsset : "+turl+' as '+tn);
-    // progress on transfers from the server to the client (downloads)
-    window.currentTransferSize = 0 ;
-    window.currentTransfer = tnraw;
-
-    var oReq = new XMLHttpRequest();
-
-    function updateProgress (oEvent) {
-      if (oEvent.lengthComputable) {
-        var percentComplete = oEvent.loaded / oEvent.total;
-        // ...
-      } else {
-        // / (window.currentTransferSize+1)
-        // Unable to compute progress information since the total size is unknown
-      }
-    }
-
-    function transferComplete(evt) {
-        if (oReq.status==404){
-            console.log("VFS_getAsset: File not found : "+ tB_name + ' in ' + (tD_name || '/') );
-            window.currentTransferSize = -1 ;
-
-        } else {
-            console.log("VFS_getAsset: Transfer is complete saving : "+tB_name + " in " + ( tD_name || '/' ));
-            var arraybuffer = oReq.response;
-            window.currentTransferSize = arraybuffer.length;
-            FS.createPath('/',tD_name,true,true);
-            FS.createDataFile(tD_name,tB_name, arraybuffer, true, true);
-        }
-        FMap[window.currentTransfer] = window.currentTransferSize;
-    }
-
-    function transferFailed(evt) {
-      console.log("VFS_getAsset: An error occurred while transferring the file : "+window.currentTransfer);
-    }
-
-    function transferCanceled(evt) {
-      console.log("VFS_getAsset: transfer "+window.currentTransfer+" has been canceled by the user.");
-    }
-    oReq.overrideMimeType("text/plain; charset=x-user-defined");
-    oReq.addEventListener("progress", updateProgress);
-    oReq.addEventListener("load", transferComplete);
-    oReq.addEventListener("error", transferFailed);
-    oReq.addEventListener("abort", transferCanceled);
-
-    oReq.open("GET",turl,false);
-    oReq.send();
-
-    return window.currentTransferSize;
-}
-
-
-
-// install emscripten hooks
-
-Module['BR_py2js'] = BR_py2js ;
-Module['BR_KBR']  = BR_KBR ;
-Module['callfs']  = VFS_getAsset;
 
 
 //***********************  EM LOADER SPARE PART ******************************************

@@ -32,10 +32,12 @@ html, body {
     height: 100%;
 }
 #viewContainer {
-    width: 60%
+    width: 60%;
+     height: 100%;
 }
 #controlContainer {
     width: 40%;
+     height: 100%;
 }
 #controls {
     border-left: 5px solid black;
@@ -73,20 +75,21 @@ html, body {
 <!--
 -->
 
-<script type="text/javascript"
+<script type="text/javascript" charset="utf-8"
     src="js/lzma.js">
 </script>
-<script type="text/javascript"
+<script type="text/javascript" charset="utf-8"
     src="http://code.jquery.com/jquery-1.12.1.min.js">
 </script>
 
-<script type="text/javascript"
+<script type="text/javascript" charset="utf-8"
     src="js/rug/colResizable-1.5.min.js">
 </script>
 
-<script 
+<script type="text/javascript" charset="utf-8"
     src="js/jquery.backgrounder.js">
 </script>
+
 
 </head>
 <body>
@@ -96,33 +99,21 @@ html, body {
        <canvas id="canvas" name="canvas"></canvas>
     </td>
     <td id="controlContainer">
-
         <div id="controls">
             <div id=theHeader>
             <img src="rsr/p3d.png" valign=bottom>&nbsp;Bamboo&nbsp;Rug&nbsp;-&nbsp;
-            <span id="status">NB : this application won't work if JavaScript is disabled.</span>
+            <span id="status">NB : App won't work with JavaScript disabled.</span>
             </div>
 
 
-            <!-- <div id="em_stdin" contentEditable="true">em_stdin</div> -->
-            <input type=text id="em_ctrl" class=em_ctrl tabindex="-1" spellcheck="false">
-          <!--  <input type=text id="em_key" editable=false spellcheck=false> -->
-          <!--  <input type=text id="em_char" spellcheck=false> -->
-
-            <!-- allow-same-origin : can remove sandboxing
-                       allowfullscreen='true'
-                webkitallowfullscreen='true'
-                mozallowfullscreen='true'
-            -->
             <iframe sandbox='allow-pointer-lock allow-scripts allow-same-origin'
                 frameBorder='0' id="editor" src="rug/intrants.html"
-                width=100% height=100%
+                width="100%" height="80%"
                 seamless='seamless'
-                ALLOWTRANSPARENCY='true'
-            >
+                ALLOWTRANSPARENCY='true'>
             </iframe>
-        </div>
 
+        </div>
     </td>
   </tr>
 </table>
@@ -141,7 +132,6 @@ $(function() {
     $('#theBackground').backgrounder({element : 'body'});
 });
 </script>
-
 <script async=true defer=true type="text/javascript" charset="utf-8"
     src="webfrost.js">
 </script>
