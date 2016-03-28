@@ -1,148 +1,230 @@
+<!doctype html>
 <html>
+<!-- term.js Copyright (c) 2012-2013, Christopher Jeffrey (MIT License) -->
+
+<title>Bamboo Forest intrants</title>
 
 <head>
-    <script type="text/javascript"
-        src="https://cdn.rawgit.com/brython-dev/brython/master/www/src/brython.js">
-    </script>
-
-    <script type="text/javascript"
-        src="http://code.jquery.com/jquery-1.12.1.min.js">
-    </script>
 
     <style>
-    textarea {
-        width:99% ;
+    html, body {
+        width : 100%;
+        padding : 0px;
+        margin : 0px;
+        height :100%;
+    } ​
+
+    .vt100 {
+        font-family:'Oxygen Mono', Consolas, 'Liberation Mono', 'DejaVu Sans Mono', monospace;
+        font-size:11px;
     }
     .codearea {
         background-color:#000000;
         color:#fff;
-        font-family:'Oxygen Mono', Consolas, 'Liberation Mono', 'DejaVu Sans Mono', monospace;
-        font-size:12px;
+
         //overflow: auto;
 
 
         overflow: scroll;
         overflow-x: hidden;
 
-
     }
 
-    .termlog {
-        white-space: pre;
-        word-wrap: normal;
-        overflow: scroll;
-        //overflow-x: hidden;
-        font-size:10px;
-        content-editable : false;
-    }
+#readlineT {
+    font-family:'Oxygen Mono', Consolas, 'Liberation Mono', 'DejaVu Sans Mono', monospace;
+    font-size:11px;
+    background-color: transparent;
+    width:99% ;
+    border: 0px;
+    outline: none;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+    color:transparent;
+    cursor:default;
+}
 
-    .linereader {
-        background-color: transparent;
-        width:99% ;
-        border: 0px;
-        outline: none;
-        -webkit-box-shadow: none;
-        -moz-box-shadow: none;
-        box-shadow: none;
-        //color:transparent;
-        cursor:default;
-    }
+#readline {
+    font-family:'Oxygen Mono', Consolas, 'Liberation Mono', 'DejaVu Sans Mono', monospace;
+    font-size:11px;
+    background-color: black;
+    margin-left : 3em;
+    margin-top : 0px;
+    padding : 0px;
+    width:100% ;
+    border: 0px;
+    outline: none;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+    color:white;
+    cursor:default;
+}
+
+
+
     </style>
-
 </head>
 
-<body onload="brython(1);">
+<body>
 
-<!--
-tabbed view here ?
--->
-
-Server Console: <br />
-<textarea id=pcode class=codearea spellcheck=false rows=8></textarea>
-
-Terminal + Log: <br />
-<textarea id="logterm" class=termlog spellcheck=false readonly="readonly" editable=false cols="132" rows="25"></textarea>
-<!-- <textarea id=linereader class=linereader style="width:98%" >&gt;&gt;&gt; </textarea> -->
-
-<input type=text id=linereader class=linereader spellcheck=false>
-
-<input type=text id=em_char class=creader spellcheck=false>
+<span id="credits">
+Powered by <a href="http://www.panda3d.org/" target="_blank">Panda3D</a> and <a href="http://kripken.github.io/emscripten-site/" target="_blank">Emscripten</a>
+</span>
+    //
+<span id="credits">see <a href="https://trello.com/c/R3HOXRXs/51-webgl-support" target="_blank">Panda3d-webgl roadmap</A></span>
+<hr />
 
 
+<!-- tabbed view here ? -->
 
+stdin + stdout + stderr :<br />
+<div id=vt100></div>
+<input type=text id=readline spellcheck=false>
 
+<script type="text/javascript"
+    src="../js/rug/pyxterm/term.js">
+</script>
 
 <script type="text/javascript">
+window.tracer = null;
+
+function show_trace(){
+    if (!window.parent.trace_trigger)
+        clearInterval(window.tracer)
+    else {
+
+        while (window.parent.buf.traceback.length>0)
+            term.write( window.parent.buf.traceback.shift()+"\r\n" );
+
+        if (window.parent.trace=='off'){
+            clearInterval(window.tracer);
+            window.parent.trace_trigger = false;
+            console.log('show_trace: off');
+        }
+    }
+}
+
+
+var term = new Terminal({
+    cols: 80,
+    rows: 25,
+    useStyle: true,
+    screenKeys: true,
+    cursorBlink: false,
+});
+
+term.print = function(text){
+    text=text.replace(/\n/g,"\r\n")+"\r\n";
+    this.write(text);
+}
+
+term.out = function(text){
+    this.write( text.replace(/\n/g,"\r\n") );
+}
+
+
+term.on('data', function(data) {
+    console.log('data' + data);
+    term.write(data);
+});
+
+term.on('title', function(title) {
+    document.title = title;
+});
+
+term.open( document.getElementById('vt100') || document.body );
+term.print(`Panda3d-webgl-runtime term.js Console !
+
+
+
+
+                **** Please Wait ****
+
+
+
+`);
+
+/*
+var help = [
+    '%+r **** termlib.js panda3d-webgl-port python link **** %-r',
+    ' ',
+    ' * type "demos" to get list of tests.',
+    ' * type "help" to see this page.',
+    ' * or type python code directly ...',
+    ' '
+]
 
 window.state_idle=0;
 window.last_idlecheck = -1;
 
-function log(val) {
-    $("#logterm").val(val + "\n" + $("#logterm").val());
-}
-
-/*
-function getNewInsertion(oldValue, newValue, newPosition) {
-
-    var type='';
-    var from=0;
-    var length=0;
-    var text='';
-
-    if(oldValue.length > newValue.length) {
-        type = 'del';
-        changeLength = oldValue.length - newValue.length;
-        pos = newPosition;
-        text = oldValue.substr(pos, changeLength);
-    } else {
-        type = 'ins';
-        changeLength = newValue.length - oldValue.length;
-        pos = newPosition - changeLength;
-        text = newValue.substr(pos, changeLength);
-    }
-    window.state_idle +=1;
-    //log("evt " +window.state_idle+' "'+text+'"  '+type+' @' +pos);
-    return {text:text, type:type, position: pos, changeLength: changeLength};
-}
-
-
-$(function() {
-
-    $("#linereader").data("old_value", $("#linereader").val());
-
-    $("#linereader").bind("paste cut keydown",function(e) {
-        var that = this;
-        setTimeout(function() {
-                if(typeof $(that).data("old_value") == "undefined") {
-                    $(that).data("old_value",$(that).val());
-                }
-
-
-                getNewInsertion($(that).data("old_value"), $(that).val(), e.target.selectionStart);
-                $(that).data("old_value",$(that).val());
-            },200);
-
-    })
-
-});
 
 */
 
-$("#linereader").focus();
 
-var LRead = document.getElementById("linereader");
-var em_char = document.getElementById("em_char");
-if (window.parent.em_char)
-    console.log("@@@@@@@@@@@@@@ CANT SET em_char @@@@@@@@@@@@@@@@@");
-else
-    window.parent.em_char = em_char ;
-
+var LRead = document.getElementById("readline");
 window.parent.LRead = LRead;
-window.parent.LRead.onkeyup = window.parent.readline ;
+
+/*
+** Returns the caret (cursor) position of the specified text field.
+** Return value range is 0-oField.value.length.
+*/
+function doGetCaretPosition (oField) {
+
+  // Initialize
+  var iCaretPos = 0;
+
+  // IE Support
+  if (document.selection) {
+
+    // Set focus on the element
+    oField.focus();
+
+    // To get cursor position, get empty selection range
+    var oSel = document.selection.createRange();
+
+    // Move selection start to 0 position
+    oSel.moveStart('character', -oField.value.length);
+
+    // The caret position is selection length
+    iCaretPos = oSel.text.length;
+  }
+
+  // Firefox support
+  else if (oField.selectionStart || oField.selectionStart == '0')
+    iCaretPos = oField.selectionStart;
+
+  // Return results
+  return iCaretPos;
+}
+
+
+function readline(e){
+    kc = e.which || e.keyCode||e.charCode ;
+    cutAt = doGetCaretPosition(LRead);
+    txt = LRead.value;
+    if (kc == 13){
+        console.log('intrants::readline('+ kc +') '+ txt );
+        window.parent.Kreadlines.push(txt);
+        LRead.value = "";
+        term.write( '\x1b[2K\r>>> '+txt+'\r\n');
+        LRead.focus();
+        return false;
+    }
+
+    txt = '\x1b[2K\r>>> '+txt.substring(0,cutAt) +'\x1b[5;7m'+txt.substring(cutAt,cutAt+1)+'\x1b[0m'+txt.substring(cutAt+1);
+    term.write( txt );
+
+    return false;
+}
+
+
+
+window.parent.LRead.onkeyup = readline ;
 
 LRead.value = 'execfile("plugbase/index.py")';
-LRead.value = 'execfile("plugbase/ui/lui/__init__.py")';
-LRead.value = 'execfile("demos/asteroids/asteroids_01.py")' ;
+//LRead.value = 'execfile("plugbase/ui/lui/__init__.py")';
+//LRead.value = 'execfile("demos/asteroids/asteroids_01.py")' ;
 LRead.value = 'execfile("demos/ralph/ralph_01.py")';
 
 
@@ -161,17 +243,27 @@ execfile("demos/asteroids/asteroids_01.py")
 //window.parent.getchar_hook();
 
 
-window.parent.c_stdout =  document.getElementById("logterm");
+if (term){
+    window.parent.c_stdout =  term;
+    window.parent.c_stdout_tty = true;
+    LRead.focus();
+} else {
+    window.parent.c_stdout =  document.getElementById("logterm");
+    window.parent.c_stdout_tty = false;
+    window.parent.c_stdout.focus();
+}
+
+
+
 </script>
 
-<script type="text/python" charset="utf-8">
-#TODO
-</script>
-<br />
-<br />
+<!--
 
-<hr>
-<span id="credits">Powered by <a href=="http://http://www.panda3d.org/">Panda3D</a> and <a href="http://kripken.github.io/emscripten-site/">Emscripten</a></span>
-    // <span id="credits">see <a href="https://trello.com/c/R3HOXRXs/51-webgl-support">Panda3d-webgl roadmap</A></span>
+<script type="text/python" charset="utf-8"
+    src="../canes/forest.py">
+</script>
+
+-->
+
 </body>
 </html>
