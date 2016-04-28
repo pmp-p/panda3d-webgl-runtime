@@ -11,9 +11,6 @@
 
 import panda3d.core
 panda3d.core.getModelPath().appendDirectory('rsr/ralph')
-panda3d.core.loadPrcFileData('', 'default-model-extension .bam')
-panda3d.core.loadPrcFileData('', 'show-frame-rate-meter #t')
-
 
 
 from direct.showbase.ShowBase import ShowBase
