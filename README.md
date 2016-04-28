@@ -20,7 +20,8 @@ what's done :
 
 
 TODO:
-    - panda ode / panda physics / openal
+
+    - panda3d.ode / panda3d.physics
     
     - websockets gateway
     
