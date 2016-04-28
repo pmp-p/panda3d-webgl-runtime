@@ -111,7 +111,7 @@ var term = new Terminal({
     rows: 25,
     useStyle: true,
     screenKeys: true,
-    cursorBlink: false,
+    cursorBlink: true,
 });
 
 term.print = function(text){
@@ -213,6 +213,8 @@ function readline(e){
     }
 
     txt = '\x1b[2K\r>>> '+txt.substring(0,cutAt) +'\x1b[5;7m'+txt.substring(cutAt,cutAt+1)+'\x1b[0m'+txt.substring(cutAt+1);
+    //txt = '\x1b[2K\r>>> '+txt+'\x1b[;'+(4+txt.substring(0,cutAt))+'f';
+
     term.write( txt );
 
     return false;
@@ -223,9 +225,10 @@ function readline(e){
 window.parent.LRead.onkeyup = readline ;
 
 LRead.value = 'execfile("plugbase/index.py")';
+LRead.value = 'run("plugbase/Hello World.py")';
 //LRead.value = 'execfile("plugbase/ui/lui/__init__.py")';
 //LRead.value = 'execfile("demos/asteroids/asteroids_01.py")' ;
-LRead.value = 'execfile("demos/ralph/ralph_01.py")';
+//LRead.value = 'execfile("demos/ralph/ralph_01.py")';
 
 
 /*
