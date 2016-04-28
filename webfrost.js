@@ -16,6 +16,8 @@ if (setdefault('JSDIR','./js/')){
     console.log("    *-- Javascript include dir is set to :"+JSDIR);
 }
 
+setdefault('GRAB_MOUSE',false);
+
 
 //mandatory !
 var ldstatus = document.getElementById("status");
@@ -311,11 +313,15 @@ if ( fileExists( MAIN_JS + '.js.lzma') ){
     EMSCRIPTEN_ASM = WEBFROST_EMSCRIPT+'.js.lzma';
     console.log('found LZMA Compressed engine at '+ EMSCRIPTEN_ASM);
     MEMORY_FILE = WEBFROST_EMSCRIPT+'.html.mem.lzma';
+    //FIXME BC
+    EMBC_FILE = WEBFROST_EMSCRIPT+'.embc.lzma';
     var LZMA_ASM = new LZMA(window.JSDIR + "lzma_worker.js");
     var LZMA_MEM = new LZMA(window.JSDIR + "lzma_worker.js");
+    var LZMA_EMBC= new LZMA(window.JSDIR + "lzma_worker.js");
 } else {
     EMSCRIPTEN_ASM = WEBFROST_EMSCRIPT+'.js';
     console.log('trying standard engine at '+ EMSCRIPTEN_ASM );
+    EMBC_FILE = WEBFROST_EMSCRIPT+'.embc';
     MEMORY_FILE = WEBFROST_EMSCRIPT+'.html.mem';
 }
 
@@ -324,14 +330,23 @@ if ( fileExists( MAIN_JS + '.js.lzma') ){
 
 //======================================
 console.log('Begin: canvas.pointerlock');
+function canvas_grab_mouse(){
+    GRAB_MOUSE = !GRAB_MOUSE;
+    if ( GRAB_MOUSE ){
+        canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock || canvas.webkitRequestPointerLock;
 
-canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock || canvas.webkitRequestPointerLock;
+        canvas.onclick = function() {
+            canvas.requestPointerLock();
+        }
+    }
+
+}
+
+if (GRAB_MOUSE)
+    canvas_grab_mouse();
+
 
 document.exitPointerLock = document.exitPointerLock || document.mozExitPointerLock || document.webkitExitPointerLock;
-
-canvas.onclick = function() {
-    canvas.requestPointerLock();
-}
 
 // pointer lock event listeners
 function lockChangeAlert() {
@@ -371,59 +386,6 @@ console.log('End: canvas.pointerlock');
 
 */
 
-function handlefocus(e){
-
-    if(e.type=='mouseover'){
-        console.log('handlefocus(in)->em_char');
-//FIXME: if last event LRead then focus em_char for program input
-        if (LRead){
-            //LRead.blur();
-            em_char.focus();
-        } else
-            canvas.focus();
-
-        window.KEditing = false;
-
-        return false;
-    }
-
-    if(e.type=='mouseout'){
-        //canvas.blur();
-        window.KEditing = true;
-        window.KLock = false ;
-//FIXME: if last event em_char then focus LRead for interactive
-        if (LRead){
-            console.log('handlefocus(out)->LRead');
-            //em_char.focus();
-            LRead.focus();
-        }
-        return false;
-    }
-    return true;
-}
-
-
-function handlefocusC(e){
-
-    if(e.type=='mouseover'){
-        console.log('handlefocusC(in)->canvas');
-        canvas.focus();
-        window.KEditing = false;
-        return false;
-    }
-
-    if(e.type=='mouseout'){
-        canvas.blur();
-        window.KEditing = true;
-        window.KLock = false ;
-        if (LRead){
-            console.log('handlefocusC(out)->LRead');
-            LRead.focus();
-        }
-        return false;
-    }
-    return true;
-}
 
 // output.jsbin.com/awenaq/4
 var Podium = {};
@@ -506,9 +468,46 @@ function getchar(e){
     //return true;
 }
 
+function canvas_move(e){
+    var rect = canvas.getBoundingClientRect();
+    console.log("Mouse: "+ (e.clientX- rect.left) + ' , '+ (e.clientY- rect.top) );
+}
+
+function canvas_contextmenu(e) {
+    if (e.button === 2) {
+        e.preventDefault();
+        return false;
+    }
+}
+
 function canvas_hook(){
+
+    function handlefocusC(e){
+
+        if(e.type=='mouseover'){
+            console.log('handlefocusC(in)->canvas');
+            canvas.focus();
+            window.KEditing = false;
+            return false;
+        }
+
+        if(e.type=='mouseout'){
+            canvas.blur();
+            window.KEditing = true;
+            window.KLock = false ;
+            if (LRead){
+                console.log('handlefocusC(out)->LRead');
+                LRead.focus();
+            }
+            return false;
+        }
+        return true;
+    }
+
     canvas.contentEditable = true;
     canvas.setAttribute('tabindex','0');
+    //canvas.addEventListener('mousemove',canvas_move,false);
+    canvas.addEventListener('contextmenu',canvas_contextmenu,false);
     canvas.addEventListener('mouseover',handlefocusC,false);
     canvas.addEventListener('mouseout',handlefocusC,false);
 
@@ -689,15 +688,15 @@ function BR_async_call(dotname,jsonstruct){
 }
 
 
-
 function BR_void(funcname){
-    call = brget('BR_void',dotname)
+    call = brget('BR_void',funcname)
     if (!call)
         return -1;
     call();
 //TODO: return >0 == exceptions
     return 0;
 }
+
 
 
 function BR_void_parametric(dotname,jsonstruct){
@@ -799,74 +798,63 @@ function BR_trace(ft,set_it){
 function fc_stderr(text){
     if (arguments.length > 1)
         text = Array.prototype.slice.call(arguments).join(' ');
+    if (text){
+        /*
+        lt = text.split('\n');
+        for(i=0;i<lt.length;i++){
+            if (window.trace)
+                window.traceback.push( lt );
 
-    /*
-    lt = text.split('\n');
-    for(i=0;i<lt.length;i++){
-        if (window.trace)
-            window.traceback.push( lt );
-
+        }
+        */
+        if (window.trace=='on')
+            buf.traceback.push( text );
+        console.error(text);
     }
-    */
-    if (window.trace=='on')
-        buf.traceback.push( text );
-    console.error(text);
 }
 
 function fc_stdout(text){
     if (arguments.length > 1)
         text = Array.prototype.slice.call(arguments).join(' ');
+    if (text){
+        try {
+            lt = text.split('\n');
+        } catch(x) {
+            return;
+        }
+        if (window.trace=='on')
+            for(i=0;i<lt.length;i++)
+                buf.traceback.push( lt[i] );
 
-    lt = text.split('\n');
+        if (c_stdout && c_stdout_tty){
+            last_line = 0 ;
+            if (lt.length>1){
+                for(i=0;i<lt.length-1;i++)
+                    c_stdout.print(lt[i])
+                last_line = lt.length-1;
+            } else
+                last_line = 0;
 
-    if (window.trace=='on')
-        for(i=0;i<lt.length;i++)
-            buf.traceback.push( lt[i] );
+            if (lt[last_line]!='>>> ')
+                c_stdout.print(lt[last_line])
+            else
+                c_stdout.write(lt[last_line])
 
-    if (c_stdout && c_stdout_tty){
-        last_line = 0 ;
-        if (lt.length>1){
-            for(i=0;i<lt.length-1;i++)
-                c_stdout.print(lt[i])
-            last_line = lt.length-1;
-        } else
-            last_line = 0;
-
-        if (lt[last_line]!='>>> ')
-            c_stdout.print(lt[last_line])
-        else
-            c_stdout.write(lt[last_line])
+        }
+        console.log(text);
     }
-    console.log(text);
 }
-
-/*
-
-
- (function() {
-        var element = document.getElementById('output');
-        if (element) element.value = ''; // clear browser cache
-        return function(text) {
-            if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
-            // These replacements are necessary if you render to raw HTML
-            //text = text.replace(/&/g, "&amp;");
-            //text = text.replace(/</g, "&lt;");
-            //text = text.replace(/>/g, "&gt;");
-            //text = text.replace('\n', '<br>', 'g');
-            console.log(text);
-            if (element) {
-                element.value += text + "\n";
-                element.scrollTop = element.scrollHeight; // focus on bottom
-            }
-        };
-    })(),
-
-
-*/
 
 
 // emscripten - filesystem
+function setupENV(){
+    /* NO ERR , but not working
+*/
+    FS.init(); //em_c_stdin, em_c_stdout, em_c_stderr );
+    ENV['OS'] = 'JS';
+    ENV['PYTHONHOME'] = '/';
 
+}
 
 function setupBFS() {
   // Constructs an instance of the backed file system.
@@ -874,7 +862,7 @@ function setupBFS() {
     BrowserFS.initialize(lsfs);
 
     var BFS = new BrowserFS.EmscriptenFS();
-    //FS.init( em_c_stdin, em_c_stdout, em_c_stderr );
+
     FS.createFolder(FS.root, '/srv', true, true);
     FS.mount(BFS, {root: '/'}, 'srv');
 }
@@ -1014,8 +1002,9 @@ function MEM_updateProgress(evt) {
 
 
 function on_asm_progress_update(percent) {
-    if (!window.SPLASH) return;
     console.log("on_asm_progress_update : " +percent);
+    if (!window.SPLASH) return;
+
     window.ASM_DEC +=  (ASM_SIZE-window.ASM_SZ) /2 ;
     var percentComplete = ( window.ASM_DEC /ASM_SIZE )*100;
     if (percentComplete>100) percentComplete=100;
@@ -1023,13 +1012,20 @@ function on_asm_progress_update(percent) {
 }
 
 function on_mem_progress_update(percent) {
-    if (!window.SPLASH) return;
     console.log("on_mem_progress_update : " +percent);
+    if (!window.SPLASH) return;
     window.MEM_DEC +=  (MEM_SIZE-window.MEM_SZ) /2 ;
     var percentComplete = ( window.MEM_DEC /MEM_SIZE )*100;
     if (percentComplete>100) percentComplete=100;
     ldbar_mem.style.width = percentComplete + '%';
 }
+
+function on_embc_progress_update(percent) {
+    console.log("on_embc_progress_update : " +percent);
+    if (!window.SPLASH) return;
+}
+
+
 
 
 function EMSCRIPTEN_GET() {
@@ -1093,9 +1089,9 @@ function EMSCRIPTEN_GET() {
 
 var Module = {
 
-    preRun: [ setupBFS ],
+    preRun: [ setupENV , setupBFS ],
 //getchar_hook,
-    postRun: [ BR_Link , canvas_hook,  resize_gl ],
+    postRun: [ BR_Link , canvas_hook, resize_gl ],
 
     print: fc_stdout,
 
@@ -1105,17 +1101,22 @@ var Module = {
     setStatus: setStatus,
     keyboardListeningElement : canvas, //em_ctrl ,
     doNotCaptureKeyboard : false,
+    BR_eval :   function (jscmd){
+                    eval( jscmd ) ;
+                },
+
 };
 
 
 
 // install emscripten hooks
 
-Module['BR_py2js'] = BR_py2js ;
+Module['BR_py2js']= BR_py2js ;
 Module['BR_KBR']  = BR_KBR ;
-Module['BR_trace'] =BR_trace ;
+Module['BR_trace']= BR_trace ;
 Module['BR_set']  = BR_set;
 Module['callfs']  = VFS_getAsset;
+Module['BR_void']  = BR_void ;
 
 
 /*
@@ -1131,7 +1132,52 @@ Module['callfs']  = VFS_getAsset;
 
 
 */
+//*********************** EM BC loader ***************************************************
 
+function BC_GET(){
+    function copyLzmaDec(src)  {
+        //var dst = new ArrayBuffer(src.byteLength);
+        var dst = new ArrayBuffer(src.length);
+        new Uint8Array(dst).set(new Uint8Array(src));
+        return dst;
+    }
+
+    if ( fileExists( EMBC_FILE ) ){
+        console.log("**** emterpreterFileRequest LZMA ****")
+        function on_embc_decompress_complete(bcresult) {
+            Module.emterpreterFile =  copyLzmaDec(bcresult);
+            EMSCRIPTEN_GET();
+        }
+        function embc_transferComplete(evt){
+            console.log( 'Decompressing EMBC ...');
+            LZMA_ASM.decompress( new Uint8Array(xhr.response)  , on_embc_decompress_complete ,on_embc_progress_update );
+        }
+        var xhr = new XMLHttpRequest();
+            xhr.open('GET', EMBC_FILE, true);
+            xhr.responseType = 'arraybuffer';
+            xhr.onload =  embc_transferComplete;
+            xhr.send(null);
+        return true;
+    } else {
+        //fallback
+        EMBC_FILE = WEBFROST_EMSCRIPT + '.embc';
+    }
+    if ( fileExists( EMBC_FILE ) ){
+        console.log("**** classic emterpreterFileRequest ****")
+        var xhr = new XMLHttpRequest();
+            xhr.open('GET', EMBC_FILE , true);
+            xhr.responseType = 'arraybuffer';
+            xhr.onload = function() {
+                    console.log('EMBC: '+resp.length);
+                    Module.emterpreterFile = xhr.response;
+                    EMSCRIPTEN_GET();
+                };
+            xhr.send(null);
+    } else {
+        console.log('@@@@@@@@@@ emterpreting disabled @@@@@@@@@');
+        EMSCRIPTEN_GET();
+    }
+}
 
 
 //***********************  EM LOADER SPARE PART ******************************************
@@ -1154,13 +1200,13 @@ if (autorun){
         Module['memoryInitializerRequest'] = fk_xhr;
 
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', MEMORY_FILE, true);
+        xhr.open('GET', MEMORY_FILE); //, true);
         xhr.responseType = 'arraybuffer';
         xhr.onprogress = MEM_updateProgress ;
 
         function on_mdecompress_complete(result) {
             setStatus('Running ....');
-            console.log('MEM :'+result.length);
+            console.log('MEM : '+result.length);
 
             if (window.SPLASH){
                 ld_mem.innerHTML = 'MEM '+ Math.round(  window.MEM_SZ/ 1024 / 1024 ) + ' / ' + Math.round( result.length / 1024 / 1024 ) +' MB';
@@ -1177,14 +1223,15 @@ if (autorun){
         function mem_transferComplete(evt){
             if (window.SPLASH)
                 ld_mem.innerHTML = 'MEM '+ Math.round(  window.MEM_SZ/ 1024 / 1024 ) + ' / ' + Math.round( MEM_SIZE/ 1024 / 1024 ) +' MB';
-            setStatus( 'Decompressing ...');
+            console.log( 'Decompressing MEM ...');
             LZMA_MEM.decompress( new Uint8Array(xhr.response) , on_mdecompress_complete ,on_mem_progress_update );
         }
 
         xhr.addEventListener("load", mem_transferComplete);
-        xhr.send();
+        xhr.send(null);
 
     } else {
+
         console.log("classic memoryInitializerRequest");
         var xhr = Module['memoryInitializerRequest'] = new XMLHttpRequest();
             xhr.open('GET', WEBFROST_EMSCRIPT+'.html.mem' , true);
@@ -1201,7 +1248,8 @@ window.onload = function() {
     catch (x) { gl = null; }
     if (gl) {
         if (autorun)
-            EMSCRIPTEN_GET();
+            BC_GET();
+            //EMSCRIPTEN_GET();
         else {
             console.log('*************** AUTORUN:JS IS OFF ***********');
             setStatus('dev>');
