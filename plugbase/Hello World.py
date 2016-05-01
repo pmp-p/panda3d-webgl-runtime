@@ -241,64 +241,6 @@ with plugbase.PluginGlobalManager( { 'config': cfg('server.cfg') } ) as pgm:
         RunTime.CoRoutines.append( main_loop )
 
 
-    if 0:
-        cam.setMode('third')
-
-        rot=0.0
-        while not pgM.Quit:
-            while not kbd.heardEnter():
-                #30 fps time.sleep(.025)
-                if world.actors:
-                    for m in world.actors:
-                        m.set_h(rot)
-                    rot+=0.4
-                time.sleep(.001)
-                rx=kbd.update()
-                if scr:
-                    scr.update()
-                pluginGlobalManager.eventManager.process_one()
-
-
-
-            print( repr(data) )
-    if 0:
-        #pluginGlobalManager.loadPlugin('ui.LUI','LUI')
-        #pgM.loadPlugin('screen.sp3d','P3D')
-
-        hp = pgM.loadPlugin('tests.Hello')
-
-        #evt('hi','World',**{ 'ctx':'greetings' })
-
-        evt('hi','World',ctx='greetings')
-
-        evt('hi','Small World','Small town')
-
-
-        with pgM.Time(__name__) as elapsed ,pgM.MemProfiler(__name__) as mp:
-            hp.main()
-
-
-
-
-        #from plugbase.abstract.core.input import HID
-        #from plugbase.abstract.seat import Seat
-
-
-        # producer / consummer
-        class Interface:
-
-            def __init__(self,p,c):
-                self.p = p
-                self.c = c
-
-
-
-            def update(self):
-                if self.p.empty():
-                    return
-                e=self.p.get()
-
-
 def update(self):
     didit=pluginGlobalManager.eventManager.flush()
     if didit>0:
