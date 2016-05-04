@@ -69,7 +69,7 @@
 <body>
 
 <span id="credits">
-Powered by <a href="http://www.panda3d.org/" target="_blank">Panda3D</a> and <a href="http://kripken.github.io/emscripten-site/" target="_blank">Emscripten</a>
+Powered by <a href="http://www.panda3d.org/" target="_blank">Panda3D</a>, <a href="https://github.com/tobspr/LUI" target="_blank">LUI</A> and <a href="http://kripken.github.io/emscripten-site/" target="_blank">Emscripten</a>
 </span>
     //
 <span id="credits">see <a href="https://trello.com/c/R3HOXRXs/51-webgl-support" target="_blank">Panda3d-webgl roadmap</A></span>
@@ -224,12 +224,10 @@ function readline(e){
 
 window.parent.LRead.onkeyup = readline ;
 
-LRead.value = 'execfile("plugbase/index.py")';
-LRead.value = 'run("plugbase/Hello World.py")';
+LRead.value = 'print("Hello World")';
 //LRead.value = 'execfile("plugbase/ui/lui/__init__.py")';
 //LRead.value = 'execfile("demos/asteroids/asteroids_01.py")' ;
 //LRead.value = 'execfile("demos/ralph/ralph_01.py")';
-
 
 /*
 
