@@ -1,11 +1,19 @@
 console.log('webfrost: Go Pods !            '+window.location.href.indexOf('localhost'));
 
 //
-setdefault('autorun',true);
+
+
 setdefault( 'autorun', window.location.href.indexOf('localhost')!=7 );
+if (autorun)
+    autorun = 'run("plugbase/Shader Test.py")';
+
+
+//gles antialising (  true / 4x )
+setdefault('gl_aa',true);
 
 setdefault('WEBFROST_EMSCRIPT','pandawgl');
 setdefault('WEBFROST_MEM',true);
+// FIXME: read those from WEBFROST_EMSCRIPT+".sizes"
 setdefault('ASM_SIZE', 34737691); // 33 * 1024 * 1024);
 setdefault('MEM_SIZE', 9988933); // 10 * 1024 *1024);
 setdefault('CONSOLE', false);
@@ -134,7 +142,8 @@ window.EMScript = null;
 =============================================================
 
 Licenses:
-    pandawgl:
+    this: please give credit.
+
     panda webgl-port : Modified BSD License
     https://github.com/panda3d/panda3d/blob/master/LICENSE
 
@@ -906,6 +915,13 @@ function VFS_getAsset(tnraw){
 
     turl = turl.replace('/srv/','/');
 
+    try {
+        fstat = FS.stat(  tn ) ;
+        if (fstat)
+            console.log("VFS_getAsset: file exists "+ tnraw +' ' + fstat['size']);
+        return fstat['size'];
+    } catch (x){}
+
     var tD_name  = dirname(tn);
     var tB_name = basename(tn);
     console.log("VFS_getAsset : "+turl+' as '+tn);
@@ -947,6 +963,8 @@ function VFS_getAsset(tnraw){
     function transferCanceled(evt) {
       console.log("VFS_getAsset: transfer "+window.currentTransfer+" has been canceled by the user.");
     }
+
+
     oReq.overrideMimeType("text/plain; charset=x-user-defined");
     oReq.addEventListener("progress", updateProgress);
     oReq.addEventListener("load", transferComplete);
@@ -980,8 +998,13 @@ function EMSCRIPTEN_RUN(){
         console.log('Running .. ' + sz +' MB');
     else
         console.log('Running ..');
+    if (autorun){
+        window.Kreadlines.push( autorun );
+        setStatus('Running script '+ autorun +' ...');
 
-    setStatus('Running ...');
+    } else {
+        console.log('Running interactive ..');
+    }
 }
 
 function ASM_updateProgress(evt) {
@@ -1181,83 +1204,91 @@ function BC_GET(){
 
 
 //***********************  EM LOADER SPARE PART ******************************************
-if (autorun){
-    function fk_addEventListener(evt,tgt){
-        //console.log( 'fk_addEventListener '+evt+' '+tgt);
-        window.MEM_OK = tgt;
-    }
-
-    if ( fileExists(  MEMORY_FILE ) ){
-        console.log("**** memoryInitializerRequest LZMA ****");
-
-        var fk_xhr = Object();
-            fk_xhr.response = null;
-            fk_xhr.status = null ;
-            fk_xhr.responseType = 'arraybuffer';
-            fk_xhr.addEventListener = fk_addEventListener;
-
-
-        Module['memoryInitializerRequest'] = fk_xhr;
-
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', MEMORY_FILE); //, true);
-        xhr.responseType = 'arraybuffer';
-        xhr.onprogress = MEM_updateProgress ;
-
-        function on_mdecompress_complete(result) {
-            setStatus('Running ....');
-            console.log('MEM : '+result.length);
-
-            if (window.SPLASH){
-                ld_mem.innerHTML = 'MEM '+ Math.round(  window.MEM_SZ/ 1024 / 1024 ) + ' / ' + Math.round( result.length / 1024 / 1024 ) +' MB';
-                ldbar_mem.style.width = '100%';
-            }
-
-            fk_xhr.response = result;
-            fk_xhr.status = 200 ;
-            try { window.MEM_OK(fk_xhr); }
-            catch (x) { }
-
-        }
-
-        function mem_transferComplete(evt){
-            if (window.SPLASH)
-                ld_mem.innerHTML = 'MEM '+ Math.round(  window.MEM_SZ/ 1024 / 1024 ) + ' / ' + Math.round( MEM_SIZE/ 1024 / 1024 ) +' MB';
-            console.log( 'Decompressing MEM ...');
-            LZMA_MEM.decompress( new Uint8Array(xhr.response) , on_mdecompress_complete ,on_mem_progress_update );
-        }
-
-        xhr.addEventListener("load", mem_transferComplete);
-        xhr.send(null);
-
-    } else {
-
-        console.log("classic memoryInitializerRequest");
-        var xhr = Module['memoryInitializerRequest'] = new XMLHttpRequest();
-            xhr.open('GET', WEBFROST_EMSCRIPT+'.html.mem' , true);
-            xhr.responseType = 'arraybuffer';
-            xhr.onprogress = MEM_updateProgress;
-            xhr.send(null);
-    }
-} else {
-    console.log('*************** AUTOLOAD:MEM IS OFF ***********');
+function fk_addEventListener(evt,tgt){
+    //console.log( 'fk_addEventListener '+evt+' '+tgt);
+    window.MEM_OK = tgt;
 }
 
-window.onload = function() {
-    try { gl = canvas.getContext("webgl"); }
-    catch (x) { gl = null; }
-    if (gl) {
-        if (autorun)
-            BC_GET();
-            //EMSCRIPTEN_GET();
-        else {
-            console.log('*************** AUTORUN:JS IS OFF ***********');
-            setStatus('dev>');
+if ( fileExists(  MEMORY_FILE ) ){
+    console.log("**** memoryInitializerRequest LZMA ****");
+
+    var fk_xhr = Object();
+        fk_xhr.response = null;
+        fk_xhr.status = null ;
+        fk_xhr.responseType = 'arraybuffer';
+        fk_xhr.addEventListener = fk_addEventListener;
+
+
+    Module['memoryInitializerRequest'] = fk_xhr;
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', MEMORY_FILE); //, true);
+    xhr.responseType = 'arraybuffer';
+    xhr.onprogress = MEM_updateProgress ;
+
+    function on_mdecompress_complete(result) {
+        setStatus('Running ....');
+        console.log('MEM : '+result.length);
+
+        if (window.SPLASH){
+            ld_mem.innerHTML = 'MEM '+ Math.round(  window.MEM_SZ/ 1024 / 1024 ) + ' / ' + Math.round( result.length / 1024 / 1024 ) +' MB';
+            ldbar_mem.style.width = '100%';
         }
+
+        fk_xhr.response = result;
+        fk_xhr.status = 200 ;
+        try { window.MEM_OK(fk_xhr); }
+        catch (x) { }
+
     }
-    else {
+
+    function mem_transferComplete(evt){
+        if (window.SPLASH)
+            ld_mem.innerHTML = 'MEM '+ Math.round(  window.MEM_SZ/ 1024 / 1024 ) + ' / ' + Math.round( MEM_SIZE/ 1024 / 1024 ) +' MB';
+        console.log( 'Decompressing MEM ...');
+        LZMA_MEM.decompress( new Uint8Array(xhr.response) , on_mdecompress_complete ,on_mem_progress_update );
+    }
+
+    xhr.addEventListener("load", mem_transferComplete);
+    xhr.send(null);
+
+} else {
+
+    console.log("classic memoryInitializerRequest");
+    var xhr = Module['memoryInitializerRequest'] = new XMLHttpRequest();
+        xhr.open('GET', WEBFROST_EMSCRIPT+'.html.mem' , true);
+        xhr.responseType = 'arraybuffer';
+        xhr.onprogress = MEM_updateProgress;
+        xhr.send(null);
+}
+
+
+window.onload = function() {
+    try {
+        gl = canvas.getContext("experimental-webgl", {antialias:gl_aa}) || canvas.getContext("webgl", {antialias:gl_aa});
+    } catch (x) {
+        gl = null;
+    }
+
+    var ext = gl.getExtension('OES_standard_derivatives');
+    if (!ext)
+        console.log('GL: [OES_standard_derivatives] supported');
+    else
+        console.log('GL: Error [OES_standard_derivatives] derivatives *not* supported');
+
+
+    var antialias = gl.getContextAttributes().antialias;
+    console.log('GL: antialias = '+antialias);
+
+    var aasize = gl.getParameter(gl.SAMPLES);
+    console.log('GL: antialias size = '+aasize );
+
+    if (!gl) {
         setStatus("Uh, your browser doesn't support WebGL. This application won't work.");
+        return;
+
     }
+    BC_GET();
 }
 
 window.onerror = function(event) {
