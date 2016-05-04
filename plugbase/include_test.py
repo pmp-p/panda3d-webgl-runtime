@@ -386,12 +386,17 @@ if 1: # not hasattr(self,'pdelay'):
         m= movingPanda()
         self.pandas.append( m)
 
+        setTimeout(panda_bw, pdelay)
+
     def panda_bw():
         m= movingPanda()
         ml.set_texture(m.model, 'rsr/tex/amiga.jpg')
         sha = ml.GLSL.make( use.get_source_line() , *black_white() )
         m.model.setShader( sha )
         self.pandas.append( m)
+
+        setTimeout(panda_cell, pdelay)
+
 
     def panda_cell():
         m= movingPanda()
@@ -400,12 +405,19 @@ if 1: # not hasattr(self,'pdelay'):
         m.model.setShader( sha )
         self.pandas.append( m)
 
+        setTimeout(panda_phong, pdelay)
+
+
     def panda_phong():
         m= movingPanda()
         ml.set_texture(m.model, 'rsr/tex/amiga.jpg')
         sha = ml.GLSL.make( use.get_source_line() , *phong_shading() )
         m.model.setShader( sha )
         self.pandas.append( m)
+
+
+        setTimeout( panda_fresnel, pdelay)
+
 
     def panda_fresnel():
         m= movingPanda()
@@ -439,17 +451,14 @@ if 1: # not hasattr(self,'pdelay'):
 
 
 
+    setTimeout(panda, pdelay)
 
 
-    setTimeout(panda, pdelay*2)
 
-    setTimeout(panda_bw, pdelay*3)
 
-    setTimeout(panda_cell, pdelay*4)
 
-    setTimeout(panda_phong, pdelay*5)
 
-    setTimeout( panda_fresnel, pdelay*6)
+
 
 
     if 0:
