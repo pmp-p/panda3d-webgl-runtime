@@ -384,7 +384,7 @@ if 1: # not hasattr(self,'pdelay'):
     def preload():
         Actor.Actor('panda-model', {'walk': 'panda-walk4'})
         loader.loadModel('teapot')
-        setTimeout(panda, pdelay)
+        setTimeout(panda, pdelay*2)
 
     def panda():
         m= movingPanda()
