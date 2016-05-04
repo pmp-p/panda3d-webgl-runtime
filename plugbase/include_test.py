@@ -441,15 +441,15 @@ if 1: # not hasattr(self,'pdelay'):
 
 
 
-    setTimeout(panda, pdelay)
+    setTimeout(panda, pdelay*2)
 
-    setTimeout(panda_bw, pdelay*2)
+    setTimeout(panda_bw, pdelay*3)
 
-    setTimeout(panda_cell, pdelay*3)
+    setTimeout(panda_cell, pdelay*4)
 
-    setTimeout(panda_phong, pdelay*4)
+    setTimeout(panda_phong, pdelay*5)
 
-    setTimeout( panda_fresnel, pdelay*5)
+    setTimeout( panda_fresnel, pdelay*6)
 
 
     if 0:
