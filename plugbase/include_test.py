@@ -381,6 +381,10 @@ if 1: # not hasattr(self,'pdelay'):
 
     ml = use('models.loader')
 
+    def preload():
+        Actor.Actor('panda-model', {'walk': 'panda-walk4'})
+        loader.loadModel('teapot')
+        setTimeout(panda, pdelay)
 
     def panda():
         m= movingPanda()
