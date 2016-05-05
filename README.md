@@ -17,7 +17,8 @@ what's done :
  - 2D audio with SDL
 
  - provides vt100 display for consoles.
-
+ 
+ - some basic shaders.
 
 Demo: http://pmp-p.github.io/panda3d-webgl-runtime/index.html
 
