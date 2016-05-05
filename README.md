@@ -19,6 +19,8 @@ what's done :
  - provides vt100 display for consoles.
 
 
+Demo: http://pmp-p.github.io/panda3d-webgl-runtime/index.html
+
 TODO:
 
     - panda3d.ode / panda3d.physics
