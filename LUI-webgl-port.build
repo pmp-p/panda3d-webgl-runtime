@@ -6,6 +6,8 @@ else
 	echo "will use system em sdk"
 fi
 
+. emflags
+
 pushd LUI
 
 python update_module_builder.py
@@ -38,8 +40,7 @@ else
     read
 fi
 
-export CXXFLAGS="-std=c++11 -O2 -DNDEBUG -Wno-c++11-extensions -Wno-deprecated-register -fPIC -ffast-math -fno-exceptions" 
-# -fno-rtti"
+#export CXXFLAGS="-std=c++11 -O2 -DNDEBUG -Wno-c++11-extensions -Wno-deprecated-register -fPIC -ffast-math -fno-exceptions"
 
 P3D="../embuilt/include"
 UI="/usr/include"
@@ -89,7 +90,7 @@ CF="-ffast-math -fno-exceptions"
 # -fno-rtti"
 EMF="$CF -s WARN_ON_UNDEFINED_SYMBOLS=1 -s AGGRESSIVE_VARIABLE_ELIMINATION=1 -s INLINING_LIMIT=1 -s DEMANGLE_SUPPORT=0 -s ASSERTIONS=0"
 
-em++ -O3 -DNDEBUG $EMF -shared -Wl,-soname=lui.bc -o ../embuilt/lui.bc $(echo -n ../embuilt/LUI/*.o) $LNK
+em++ -O3 -DNDEBUG $EMF -shared -Wl,-soname=lui.bc -o ../embuilt/panda3d/lui.bc $(echo -n ../embuilt/LUI/*.o) $LNK
 
 popd
 
