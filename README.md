@@ -14,7 +14,7 @@ what's done :
 
  - dynamic assets loading from webservers with BrowserFS
 
- - 2D audio with SDL
+ - openal
 
  - provides vt100 display for consoles.
  
@@ -22,14 +22,15 @@ what's done :
 
 Demo: http://pmp-p.github.io/panda3d-webgl-runtime/index.html
 
+WIP:
+    - websockets gateway.
+    
+    - some basic shaders.
+
 TODO:
 
     - panda3d.ode / panda3d.physics
     
-    - websockets gateway
-    
-    - 3D audio : correct openal linking.
- 
     - python 3 or better pypy.js
 
     - nuitka integration.
