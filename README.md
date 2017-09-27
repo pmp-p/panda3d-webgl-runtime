@@ -4,8 +4,9 @@ binary framework for panda3d-webgl branch
 built with emscripten "incoming" branch.
 
 
-what's done :
+What's done :
 
+```
  - panda / bullet / LUI
 
  - LZMA compress all emscripten elements
@@ -19,10 +20,13 @@ what's done :
  - provides vt100 display for consoles.
  
  - some basic shaders.
+```
 
 Demo: http://pmp-p.github.io/panda3d-webgl-runtime/index.html
 
+
 WIP:
+
     - websockets gateway.
     
     - some basic shaders.
