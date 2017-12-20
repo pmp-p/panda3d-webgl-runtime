@@ -25,6 +25,12 @@ What's done :
 Demo: http://pmp-p.github.io/panda3d-webgl-runtime/index.html
 
 
+Video of demo in case your browser can't do webgl or you are on slow link :
+
+http://pmp-p.github.io/panda3d-webgl-runtime/pandawebgl.webm
+
+ 
+
 WIP:
 
     - websockets gateway.
