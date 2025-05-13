@@ -164,7 +164,7 @@ function updateBatteryStatus(battery) {
     Bat['d'] = battery.dischargingTime / 60 ;
 }
 
-
+/*
 navigator.getBattery().then(
     function(battery) {
         // Update the battery status initially when the promise resolves ...
@@ -184,7 +184,7 @@ navigator.getBattery().then(
         };
     }
 );
-
+*/
 
 function setStatus(status_text){
 
